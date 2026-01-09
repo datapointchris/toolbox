@@ -10,8 +10,8 @@ import (
 
 // SearchResult represents a tool that matched a search query
 type SearchResult struct {
-	Name        string
-	Tool        Tool
+	Name string
+	Tool Tool
 }
 
 // SearchTools finds all tools matching a query (case-insensitive)

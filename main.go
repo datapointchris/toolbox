@@ -22,11 +22,9 @@ func getVersion() string {
 // Cobra is like Python's click or argparse, but more powerful
 // It handles subcommands, flags, help text, etc.
 
-var (
-	// This is a package-level variable (like a global in Python)
-	// We load the registry once and share it across commands
-	registry *Registry
-)
+// This is a package-level variable (like a global in Python)
+// We load the registry once and share it across commands
+var registry *Registry
 
 // rootCmd is the base command (just "toolbox")
 var rootCmd = &cobra.Command{
@@ -39,7 +37,7 @@ Discover and learn about the 98 tools in your dotfiles.
 Search by name, category, or tags. Browse interactively with gum.`,
 	// Run is called when command is executed without subcommands
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help() // Show help by default
+		_ = cmd.Help()
 	},
 }
 

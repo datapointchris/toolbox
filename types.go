@@ -14,15 +14,15 @@ type Example struct {
 // The yaml:"fieldname" tags tell Go how to map YAML keys to struct fields
 // This is similar to Python's dataclass with field annotations, but more explicit
 type Tool struct {
-	Category     string   `yaml:"category"`
-	Description  string   `yaml:"description"`
-	InstalledVia string   `yaml:"installed_via"`
-	Usage        string   `yaml:"usage"`
-	WhyUse       string   `yaml:"why_use"`      // YAML snake_case maps to Go PascalCase
-	Examples     []Example `yaml:"examples"`    // Slice (like Python list) of Example structs
-	SeeAlso      []string `yaml:"see_also"`     // Slice of strings
-	Tags         []string `yaml:"tags"`
-	DocsURL      string   `yaml:"docs_url"`
+	Category     string    `yaml:"category"`
+	Description  string    `yaml:"description"`
+	InstalledVia string    `yaml:"installed_via"`
+	Usage        string    `yaml:"usage"`
+	WhyUse       string    `yaml:"why_use"`  // YAML snake_case maps to Go PascalCase
+	Examples     []Example `yaml:"examples"` // Slice (like Python list) of Example structs
+	SeeAlso      []string  `yaml:"see_also"` // Slice of strings
+	Tags         []string  `yaml:"tags"`
+	DocsURL      string    `yaml:"docs_url"`
 }
 
 // Registry is a map from tool name (string) to Tool struct

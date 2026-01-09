@@ -13,18 +13,19 @@ import (
 // In Python, you might use colorama.Fore.BLUE, etc.
 // Using bright variants (90-97) for better visibility
 const (
-	ansiReset  = "\033[0m"
-	ansiRed    = "\033[91m"    // Bright red
-	ansiGreen  = "\033[92m"    // Bright green
-	ansiYellow = "\033[93m"    // Bright yellow
-	ansiBlue   = "\033[94m"    // Bright blue
-	ansiCyan   = "\033[96m"    // Bright cyan
-	ansiMagenta = "\033[95m"   // Bright magenta
-	ansiBold   = "\033[1m"
+	ansiReset   = "\033[0m"
+	ansiRed     = "\033[91m" // Bright red
+	ansiGreen   = "\033[92m" // Bright green
+	ansiYellow  = "\033[93m" // Bright yellow
+	ansiBlue    = "\033[94m" // Bright blue
+	ansiCyan    = "\033[96m" // Bright cyan
+	ansiMagenta = "\033[95m" // Bright magenta
+	ansiBold    = "\033[1m"
 )
 
 // Color helper functions - wrap text in color codes
-// In Python: def color_blue(text: str) -> str
+
+//nolint:unused // kept for completeness
 func colorBlue(text string) string {
 	return ansiBlue + text + ansiReset
 }
@@ -45,6 +46,7 @@ func colorRed(text string) string {
 	return ansiRed + text + ansiReset
 }
 
+//nolint:unused // kept for completeness
 func colorBold(text string) string {
 	return ansiBold + text + ansiReset
 }

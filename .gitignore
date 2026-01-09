@@ -3,3 +3,10 @@ toolbox
 
 # Test binary
 *.test
+
+# Test coverage reports
+coverage.out
+coverage.html
+
+# Task build cache
+.task/

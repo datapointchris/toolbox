@@ -11,7 +11,7 @@ import (
 // This calls out to the `gum` CLI tool for beautiful terminal UIs
 
 // SelectCategory shows an interactive category picker using gum
-// Returns selected category name or empty string if cancelled
+// Returns selected category name or empty string if canceled
 func SelectCategory(registry *Registry) (string, error) {
 	categories := GetCategoriesSorted(registry)
 	categoryMap := registry.ByCategory()
@@ -33,7 +33,7 @@ func SelectCategory(registry *Registry) (string, error) {
 	// Run and capture output
 	output, err := cmd.Output()
 	if err != nil {
-		// User cancelled (Ctrl+C) - not really an error
+		// User canceled (Ctrl+C) - not really an error
 		return "", nil
 	}
 
@@ -77,7 +77,7 @@ func SelectToolInCategory(registry *Registry, category string) (string, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return "", nil // User cancelled
+		return "", nil // User canceled
 	}
 
 	return strings.TrimSpace(string(output)), nil
@@ -92,7 +92,7 @@ func InteractiveCategoryBrowse(registry *Registry) error {
 		return err
 	}
 	if category == "" {
-		return nil // User cancelled
+		return nil // User canceled
 	}
 
 	// Step 2: Select tool in category
@@ -101,7 +101,7 @@ func InteractiveCategoryBrowse(registry *Registry) error {
 		return err
 	}
 	if toolName == "" {
-		return nil // User cancelled
+		return nil // User canceled
 	}
 
 	// Step 3: Show tool details

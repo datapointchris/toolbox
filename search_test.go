@@ -63,7 +63,7 @@ func TestSearchTools(t *testing.T) {
 func TestGetToolsByCategory(t *testing.T) {
 	registry := &Registry{
 		Tools: map[string]Tool{
-			"git": {Category: "version-control"},
+			"git":     {Category: "version-control"},
 			"lazygit": {Category: "version-control"},
 			"ripgrep": {Category: "search"},
 		},
@@ -93,10 +93,10 @@ func TestMatchesTool(t *testing.T) {
 
 	// Slice of test cases
 	// In Python: @pytest.mark.parametrize("name,query,expected", [...])
-	tests := []struct{
+	tests := []struct {
 		name     string // test case name
 		query    string
-		expected bool   // should it match?
+		expected bool // should it match?
 	}{
 		{"exact match", "search", true},
 		{"case insensitive", "SEARCH", true},
