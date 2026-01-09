@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 )
+
+func getVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+			return info.Main.Version
+		}
+	}
+	return "dev"
+}
 
 // main.go - CLI entry point using cobra framework
 // Cobra is like Python's click or argparse, but more powerful
@@ -20,8 +30,9 @@ var (
 
 // rootCmd is the base command (just "toolbox")
 var rootCmd = &cobra.Command{
-	Use:   "toolbox",
-	Short: "Discover and explore your dotfiles tools",
+	Use:     "toolbox",
+	Short:   "Discover and explore your dotfiles tools",
+	Version: getVersion(),
 	Long: `Toolbox - Dotfiles Tool Discovery System
 
 Discover and learn about the 98 tools in your dotfiles.
@@ -133,7 +144,7 @@ func main() {
 
 		// Check if it's a known command
 		// In Python: if arg not in ["list", "show", "search", "categories", "help"]
-		knownCommands := []string{"list", "show", "search", "categories", "help", "--help", "-h"}
+		knownCommands := []string{"list", "show", "search", "categories", "help", "--help", "-h", "--version", "-v"}
 		isKnownCommand := false
 		for _, cmd := range knownCommands {
 			if arg == cmd {
