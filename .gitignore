@@ -10,3 +10,4 @@ coverage.html
 
 # Task build cache
 .task/
+.planning/
