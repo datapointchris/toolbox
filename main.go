@@ -130,6 +130,7 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(searchCmd)
 	rootCmd.AddCommand(categoriesCmd)
+	rootCmd.AddCommand(checkCmd)
 }
 
 // main is the program entry point
@@ -142,7 +143,7 @@ func main() {
 
 		// Check if it's a known command
 		// In Python: if arg not in ["list", "show", "search", "categories", "help"]
-		knownCommands := []string{"list", "show", "search", "categories", "help", "--help", "-h", "--version", "-v"}
+		knownCommands := []string{"list", "show", "search", "categories", "check", "help", "--help", "-h", "--version", "-v"}
 		isKnownCommand := false
 		for _, cmd := range knownCommands {
 			if arg == cmd {
