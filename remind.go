@@ -50,6 +50,16 @@ Requires EXTENDED_HISTORY (setopt EXTENDED_HISTORY in .zshrc) for the
 		fmt.Println()
 		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(name))
 		fmt.Printf("  %s\n", tool.Description)
+		if tool.WhyUse != "" {
+			fmt.Printf("  %s %s\n", colorYellow("↳"), tool.WhyUse)
+		}
+		if len(tool.Examples) > 0 {
+			fmt.Println()
+			for _, ex := range tool.Examples {
+				fmt.Printf("    %s %s\n", colorGreen("$"), ex.Cmd)
+				fmt.Printf("      %s\n", ex.Desc)
+			}
+		}
 		fmt.Println()
 
 		reminders[name] = time.Now().Format("2006-01-02")
