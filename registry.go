@@ -41,27 +41,21 @@ func LoadRegistry(path string) (*Registry, error) {
 	return &registry, nil
 }
 
-// GetRegistryPath returns the path to the registry file
-// Checks DOTFILES_REGISTRY env var first, falls back to default
-// In Python: def get_registry_path() -> str
+// GetRegistryPath returns the path to the registry file.
+// Checks TOOLBOX_REGISTRY env var first, then falls back to ~/dev/tools.yml.
+// The registry lives in ~/dev/ (Syncthing-synced) rather than ~/.config/ because
+// it is data about the tool ecosystem, not machine-specific configuration.
 func GetRegistryPath() string {
-	// os.Getenv returns empty string if not set (no KeyError like Python)
-	if path := os.Getenv("DOTFILES_REGISTRY"); path != "" {
+	if path := os.Getenv("TOOLBOX_REGISTRY"); path != "" {
 		return path
 	}
 
-	// Get home directory
-	// In Python: pathlib.Path.home()
 	home, err := os.UserHomeDir()
 	if err != nil {
-		// Panic is like raising an exception, but for unrecoverable errors
-		// Use sparingly - prefer returning errors
 		panic(fmt.Sprintf("cannot determine home directory: %v", err))
 	}
 
-	// Join path components
-	// In Python: Path(home) / ".config" / "toolbox" / "registry.yml"
-	return filepath.Join(home, ".config", "toolbox", "registry.yml")
+	return filepath.Join(home, "dev", "tools.yml")
 }
 
 // ToolExists checks if a tool exists in the registry

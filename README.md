@@ -74,7 +74,7 @@ go test -v
 
 ## Registry
 
-Tools are defined in `~/.config/toolbox/registry.yml` (or `$DOTFILES_REGISTRY`)
+Tools are defined in `~/dev/tools.yml` (Syncthing-synced, override with `$TOOLBOX_REGISTRY`)
 
 ## Dependencies
 
