@@ -30,6 +30,14 @@ toolbox list
 
 # Interactive category browser (requires gum)
 toolbox categories
+
+# List shell functions (from dotfiles shell source files)
+toolbox funcs
+toolbox funcs git
+
+# List shell aliases
+toolbox aliases
+toolbox aliases docker
 ```
 
 ## Commands
@@ -39,34 +47,24 @@ toolbox categories
 - `toolbox show <tool>` - Show detailed information about a tool
 - `toolbox search <query>` - Search tools (case-insensitive)
 - `toolbox categories` - Interactive category picker with gum
+- `toolbox check` - Audit registry against installed tools
+- `toolbox remind` - Surface a random forgotten tool from the registry
+- `toolbox funcs [filter]` - List shell functions parsed from dotfiles shell files
+- `toolbox aliases [filter]` - List shell aliases parsed from dotfiles shell files
+- `toolbox update` - Update toolbox to the latest release
 - `toolbox <query>` - Shortcut for search
 
 ## Building and Installing
 
-Toolbox uses Task for building and installing (same pattern as sess):
-
 ```bash
-# Build the binary (creates apps/common/toolbox/toolbox)
-cd apps/common/toolbox
+# Build the binary
 task build
 
 # Build and install to ~/go/bin
 task install
 ```
 
-**Important**: The built binary `apps/common/toolbox/toolbox` is a build artifact (gitignored). The actual installation copies it to `~/go/bin/toolbox` (standard Go location).
-
-### Build vs Install
-
-- **Build**: Creates `apps/common/toolbox/toolbox` (local, gitignored)
-- **Install**: Copies to `~/go/bin/toolbox` (standard Go binary location)
-
-This follows dotfiles best practice:
-
-- Source code lives in dotfiles repo
-- Build artifacts are gitignored
-- Installation happens outside the repo
-- No symlinks for binaries (separation of concerns)
+The built binary (`toolbox`) is a build artifact (gitignored). `go install` also works and puts the binary in `$GOPATH/bin`.
 
 ## Testing
 
@@ -92,6 +90,7 @@ Tools are defined in `~/.config/toolbox/registry.yml` (or `$DOTFILES_REGISTRY`)
 - `search.go` - Search and filter functions
 - `display.go` - Output formatting
 - `interactive.go` - Gum integration
+- `shell.go` - Shell function and alias parsing from `~/.local/shell/`
 - `search_test.go` - Tests
 
 ## Comments

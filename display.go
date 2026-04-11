@@ -191,3 +191,57 @@ func DisplayCategories(registry *Registry) {
 	fmt.Println()
 	fmt.Println(colorYellow("💡 TIP:") + " Use " + colorCyan("toolbox list") + " to see tools by category")
 }
+
+// DisplayShellFunctions prints shell functions in a two-column name/description layout.
+func DisplayShellFunctions(funcs []ShellFunction, filter string) {
+	if len(funcs) == 0 {
+		if filter != "" {
+			fmt.Printf("%s No functions found matching '%s'\n", colorRed("✗"), filter)
+		} else {
+			fmt.Printf("%s No shell functions found\n", colorYellow("⚠"))
+		}
+		return
+	}
+
+	header := fmt.Sprintf("Shell Functions (%d)", len(funcs))
+	if filter != "" {
+		header += fmt.Sprintf(" — filter: %s", filter)
+	}
+	fmt.Println(colorMagenta(header))
+	fmt.Println()
+
+	for _, fn := range funcs {
+		fmt.Printf("  %-30s %s\n", colorCyan(fn.Name), fn.Description)
+	}
+	fmt.Println()
+}
+
+// DisplayShellAliases prints shell aliases in a three-column name/command/description layout.
+func DisplayShellAliases(aliases []ShellAlias, filter string) {
+	if len(aliases) == 0 {
+		if filter != "" {
+			fmt.Printf("%s No aliases found matching '%s'\n", colorRed("✗"), filter)
+		} else {
+			fmt.Printf("%s No shell aliases found\n", colorYellow("⚠"))
+		}
+		return
+	}
+
+	header := fmt.Sprintf("Shell Aliases (%d)", len(aliases))
+	if filter != "" {
+		header += fmt.Sprintf(" — filter: %s", filter)
+	}
+	fmt.Println(colorMagenta(header))
+	fmt.Println()
+
+	for _, a := range aliases {
+		desc := a.Description
+		if desc == "" {
+			desc = colorYellow(a.Command)
+		} else {
+			desc = fmt.Sprintf("%s  %s", colorGreen(a.Description), colorYellow("("+a.Command+")"))
+		}
+		fmt.Printf("  %-25s %s\n", colorCyan(a.Name), desc)
+	}
+	fmt.Println()
+}

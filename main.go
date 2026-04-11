@@ -107,6 +107,62 @@ var categoriesCmd = &cobra.Command{
 	},
 }
 
+// funcsCmd lists shell functions parsed from dotfiles shell source files
+var funcsCmd = &cobra.Command{
+	Use:   "funcs [filter]",
+	Short: "List shell functions from dotfiles",
+	Long: `List shell functions defined in your dotfiles shell source files.
+
+Parses functions.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
+Functions are identified by the #@name / #--> description marker convention.
+
+Optionally filter by name or description (case-insensitive).`,
+	Args: cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		filter := ""
+		if len(args) > 0 {
+			filter = args[0]
+		}
+
+		funcs, err := LoadShellFunctions()
+		if err != nil {
+			fmt.Printf("%s %v\n", colorRed("Error:"), err)
+			os.Exit(1)
+		}
+
+		filtered := FilterFunctions(funcs, filter)
+		DisplayShellFunctions(filtered, filter)
+	},
+}
+
+// aliasesCmd lists shell aliases parsed from dotfiles shell source files
+var aliasesCmd = &cobra.Command{
+	Use:   "aliases [filter]",
+	Short: "List shell aliases from dotfiles",
+	Long: `List shell aliases defined in your dotfiles shell source files.
+
+Parses aliases.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
+The comment line immediately above each alias is used as its description.
+
+Optionally filter by name, command, or description (case-insensitive).`,
+	Args: cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		filter := ""
+		if len(args) > 0 {
+			filter = args[0]
+		}
+
+		aliases, err := LoadShellAliases()
+		if err != nil {
+			fmt.Printf("%s %v\n", colorRed("Error:"), err)
+			os.Exit(1)
+		}
+
+		filtered := FilterAliases(aliases, filter)
+		DisplayShellAliases(filtered, filter)
+	},
+}
+
 // checkGumInstalled verifies gum is available in PATH
 func checkGumInstalled() error {
 	// exec.LookPath is like Python's shutil.which()
@@ -138,6 +194,8 @@ func init() {
 	rootCmd.AddCommand(categoriesCmd)
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(remindCmd)
+	rootCmd.AddCommand(funcsCmd)
+	rootCmd.AddCommand(aliasesCmd)
 }
 
 // main is the program entry point
@@ -150,7 +208,7 @@ func main() {
 
 		// Check if it's a known command
 		// In Python: if arg not in ["list", "show", "search", "categories", "help"]
-		knownCommands := []string{"list", "show", "search", "categories", "check", "remind", "update", "help", "--help", "-h", "--version", "-v"}
+		knownCommands := []string{"list", "show", "search", "categories", "check", "remind", "update", "funcs", "aliases", "help", "--help", "-h", "--version", "-v"}
 		isKnownCommand := false
 		for _, cmd := range knownCommands {
 			if arg == cmd {
