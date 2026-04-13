@@ -49,8 +49,9 @@ Search by name, category, or tags. Browse interactively with gum.`,
 
 // listCmd shows all tools grouped by category
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all tools grouped by category",
+	Use:     "list",
+	Short:   "List all tools grouped by category",
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		DisplayListByCategory(registry)
 	},
@@ -58,9 +59,10 @@ var listCmd = &cobra.Command{
 
 // showCmd displays detailed info about a specific tool
 var showCmd = &cobra.Command{
-	Use:   "show <tool>",
-	Short: "Show detailed information about a tool",
-	Args:  cobra.ExactArgs(1), // Require exactly 1 argument
+	Use:     "show <tool>",
+	Short:   "Show detailed information about a tool",
+	Args:    cobra.ExactArgs(1),
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		toolName := args[0]
 
@@ -78,9 +80,10 @@ var showCmd = &cobra.Command{
 
 // searchCmd searches for tools by query
 var searchCmd = &cobra.Command{
-	Use:   "search <query>",
-	Short: "Search tools by description, tags, or name",
-	Args:  cobra.ExactArgs(1),
+	Use:     "search <query>",
+	Short:   "Search tools by description, tags, or name",
+	Args:    cobra.ExactArgs(1),
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		query := args[0]
 		results := SearchTools(registry, query)
@@ -90,8 +93,9 @@ var searchCmd = &cobra.Command{
 
 // categoriesCmd shows interactive category browser
 var categoriesCmd = &cobra.Command{
-	Use:   "categories",
-	Short: "Browse tools by category (interactive)",
+	Use:     "categories",
+	Short:   "Browse tools by category (interactive)",
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if gum is installed
 		// In Python: if not shutil.which("gum")
@@ -172,22 +176,24 @@ func checkGumInstalled() error {
 	return nil
 }
 
-// init runs before main() - used for setup
-// In Python, this would be module-level code
-func init() {
-	// Load registry
+// requireRegistryPreRun loads the registry on demand.
+// Attach as PreRunE to commands that need the registry.
+// Commands like update, funcs, and aliases skip this so they work
+// even when the registry file is missing.
+func requireRegistryPreRun(cmd *cobra.Command, args []string) error {
+	if registry != nil {
+		return nil
+	}
 	path := GetRegistryPath()
-
 	var err error
 	registry, err = LoadRegistry(path)
 	if err != nil {
-		// Fatal error - can't continue without registry
-		fmt.Fprintf(os.Stderr, "%s %v\n", colorRed("Error:"), err)
-		fmt.Fprintf(os.Stderr, "Expected registry at: %s\n", path)
-		os.Exit(1)
+		return fmt.Errorf("%v\nExpected registry at: %s", err, path)
 	}
+	return nil
+}
 
-	// Add subcommands to root
+func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(searchCmd)
@@ -219,6 +225,10 @@ func main() {
 
 		// If not a known command, treat as search query
 		if !isKnownCommand {
+			if err := requireRegistryPreRun(nil, nil); err != nil {
+				fmt.Fprintf(os.Stderr, "%s %v\n", colorRed("Error:"), err)
+				os.Exit(1)
+			}
 			results := SearchTools(registry, arg)
 			DisplaySearchResults(results, arg)
 			return

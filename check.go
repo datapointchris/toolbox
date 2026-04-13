@@ -16,6 +16,7 @@ var checkCmd = &cobra.Command{
 	Long: `Checks two things:
   1. Which registered tools are missing from PATH
   2. Which tools in ~/tools/ and ~/dotfiles/apps/common/ are not in the registry`,
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()
 		if err != nil {

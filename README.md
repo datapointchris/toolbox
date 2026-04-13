@@ -48,7 +48,7 @@ toolbox aliases docker
 - `toolbox search <query>` - Search tools (case-insensitive)
 - `toolbox categories` - Interactive category picker with gum
 - `toolbox check` - Audit registry against installed tools
-- `toolbox remind` - Surface a random forgotten tool from the registry
+- `toolbox remind` - Surface the least-recently-reminded tool from the registry
 - `toolbox funcs [filter]` - List shell functions parsed from dotfiles shell files
 - `toolbox aliases [filter]` - List shell aliases parsed from dotfiles shell files
 - `toolbox update` - Update toolbox to the latest release
@@ -91,6 +91,9 @@ Tools are defined in `~/dev/tools.yml` (Syncthing-synced, override with `$TOOLBO
 - `display.go` - Output formatting
 - `interactive.go` - Gum integration
 - `shell.go` - Shell function and alias parsing from `~/.local/shell/`
+- `check.go` - Registry audit against installed tools
+- `remind.go` - Least-recently-reminded tool surfacing
+- `update.go` - Self-update from GitHub releases
 - `search_test.go` - Tests
 
 ## Comments

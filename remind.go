@@ -25,6 +25,7 @@ reminded least recently that hasn't been used in the last 90 days.
 Tracks reminder history in ~/.local/state/toolbox/reminders.json.
 Requires EXTENDED_HISTORY (setopt EXTENDED_HISTORY in .zshrc) for the
 90-day recency check.`,
+	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()
 		if err != nil {
