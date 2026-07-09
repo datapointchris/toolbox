@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -231,6 +233,30 @@ func LoadShellAliases() ([]ShellAlias, error) {
 		all = append(all, aliases...)
 	}
 	return all, nil
+}
+
+// LoadGitAliases returns git aliases from `git config --get-regexp ^alias\.`.
+// Git resolves every config file, so this is source-agnostic. A missing git or
+// an absence of aliases is non-fatal — the caller just gets an empty slice.
+func LoadGitAliases() ([]ShellAlias, error) {
+	out, err := exec.Command("git", "config", "--get-regexp", `^alias\.`).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var aliases []ShellAlias
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	for scanner.Scan() {
+		key, cmd, found := strings.Cut(scanner.Text(), " ")
+		if !found {
+			continue
+		}
+		name := strings.TrimPrefix(key, "alias.")
+		if name != "" {
+			aliases = append(aliases, ShellAlias{Name: name, Command: cmd, Source: "gitconfig"})
+		}
+	}
+	return aliases, scanner.Err()
 }
 
 // FilterFunctions returns functions whose name or description contains the filter string (case-insensitive).

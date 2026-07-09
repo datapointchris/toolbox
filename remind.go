@@ -87,6 +87,11 @@ func buildRemindCandidates(reg *Registry) []remindTarget {
 			cands = append(cands, remindTarget{name: al.Name, kind: "alias", al: al})
 		}
 	}
+	if gits, err := LoadGitAliases(); err == nil {
+		for _, g := range gits {
+			cands = append(cands, remindTarget{name: g.Name, kind: "gitalias", al: g})
+		}
+	}
 	return cands
 }
 
@@ -104,6 +109,9 @@ func renderReminder(t remindTarget) {
 			fmt.Printf("  %s\n", t.al.Description)
 		}
 		fmt.Printf("  %s %s\n", colorYellow("↳"), t.al.Command)
+	case "gitalias":
+		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan("git "+t.al.Name), colorGreen("(git alias)"))
+		fmt.Printf("  %s git %s\n", colorYellow("↳"), t.al.Command)
 	default: // tool
 		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(t.name))
 		fmt.Printf("  %s\n", t.tool.Description)
@@ -144,7 +152,10 @@ func parseRecentlyUsed(home string) map[string]bool {
 	defer func() { _ = f.Close() }()
 
 	cutoff := time.Now().Unix() - cutoffDays*86400
-	re := regexp.MustCompile(`^: (\d+):\d+;(\S+)`)
+	// Capture the command and an optional second word. The second word matters
+	// for git aliases: they are invoked as `git co`, so without it a git alias is
+	// never seen as used and would resurface forever.
+	re := regexp.MustCompile(`^: (\d+):\d+;(\S+)(?:\s+(\S+))?`)
 
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
@@ -158,6 +169,10 @@ func parseRecentlyUsed(home string) map[string]bool {
 			continue
 		}
 		used[m[2]] = true
+		// `git co` marks the git alias `co` as used, not just `git`.
+		if m[2] == "git" && m[3] != "" {
+			used[m[3]] = true
+		}
 	}
 	return used
 }
