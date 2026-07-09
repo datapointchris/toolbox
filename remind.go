@@ -43,29 +43,81 @@ Requires EXTENDED_HISTORY (setopt EXTENDED_HISTORY in .zshrc) for the
 		recentlyUsed := parseRecentlyUsed(home)
 		reminders := loadReminders(remindersPath)
 
-		name, tool := pickRemindTarget(registry, recentlyUsed, reminders)
-		if name == "" {
+		candidates := buildRemindCandidates(registry)
+		target, ok := pickRemindTarget(candidates, recentlyUsed, reminders)
+		if !ok {
 			return
 		}
 
 		fmt.Println()
-		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(name))
-		fmt.Printf("  %s\n", tool.Description)
-		if tool.WhyUse != "" {
-			fmt.Printf("  %s %s\n", colorYellow("↳"), tool.WhyUse)
+		renderReminder(target)
+		fmt.Println()
+
+		reminders[target.name] = time.Now().Format("2006-01-02")
+		saveReminders(remindersPath, reminders)
+	},
+}
+
+// remindTarget is one thing worth resurfacing — a registry tool, a shell
+// function, or an alias. remind rotates over all three so a forgotten fzf
+// function surfaces the same way a forgotten tool does.
+type remindTarget struct {
+	name string
+	kind string // "tool", "function", "alias"
+	tool Tool
+	fn   ShellFunction
+	al   ShellAlias
+}
+
+// buildRemindCandidates pools the registry tools with the annotated shell
+// functions and aliases. Shell parsing failures are non-fatal — a missing
+// functions.sh just means fewer candidates, not a broken reminder.
+func buildRemindCandidates(reg *Registry) []remindTarget {
+	var cands []remindTarget
+	for name, tool := range reg.Tools {
+		cands = append(cands, remindTarget{name: name, kind: "tool", tool: tool})
+	}
+	if fns, err := LoadShellFunctions(); err == nil {
+		for _, fn := range fns {
+			cands = append(cands, remindTarget{name: fn.Name, kind: "function", fn: fn})
 		}
-		if len(tool.Examples) > 0 {
+	}
+	if als, err := LoadShellAliases(); err == nil {
+		for _, al := range als {
+			cands = append(cands, remindTarget{name: al.Name, kind: "alias", al: al})
+		}
+	}
+	return cands
+}
+
+// renderReminder prints the card for whichever kind of thing was picked.
+func renderReminder(t remindTarget) {
+	switch t.kind {
+	case "function":
+		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.name), colorGreen("(shell function)"))
+		if t.fn.Description != "" {
+			fmt.Printf("  %s\n", t.fn.Description)
+		}
+	case "alias":
+		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.name), colorGreen("(alias)"))
+		if t.al.Description != "" {
+			fmt.Printf("  %s\n", t.al.Description)
+		}
+		fmt.Printf("  %s %s\n", colorYellow("↳"), t.al.Command)
+	default: // tool
+		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(t.name))
+		fmt.Printf("  %s\n", t.tool.Description)
+		if t.tool.WhyUse != "" {
+			fmt.Printf("  %s %s\n", colorYellow("↳"), t.tool.WhyUse)
+		}
+		if len(t.tool.Examples) > 0 {
 			fmt.Println()
-			for _, ex := range tool.Examples {
+			for _, ex := range t.tool.Examples {
 				fmt.Printf("    %s %s\n", colorGreen("$"), ex.Cmd)
 				fmt.Printf("      %s\n", ex.Desc)
 			}
 		}
-		fmt.Println()
-
-		reminders[name] = time.Now().Format("2006-01-02")
-		saveReminders(remindersPath, reminders)
-	},
+	}
 }
 
 func getStateDir(home string) string {
@@ -137,33 +189,32 @@ func saveReminders(path string, r remindersMap) {
 	_ = os.Rename(tmp, path)
 }
 
-// pickRemindTarget returns the tool reminded least recently that isn't recently used.
-func pickRemindTarget(reg *Registry, recentlyUsed map[string]bool, reminders remindersMap) (string, Tool) {
-	names := make([]string, 0, len(reg.Tools))
-	for name := range reg.Tools {
-		names = append(names, name)
-	}
-	sort.Strings(names)
+// pickRemindTarget returns the candidate reminded least recently that isn't
+// recently used, across tools, functions, and aliases alike. Candidates are
+// sorted by name first so the choice is deterministic when reminder dates tie.
+func pickRemindTarget(candidates []remindTarget, recentlyUsed map[string]bool, reminders remindersMap) (remindTarget, bool) {
+	sorted := make([]remindTarget, len(candidates))
+	copy(sorted, candidates)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].name < sorted[j].name })
 
-	bestName := ""
+	best := remindTarget{}
 	bestDate := "9999-99-99"
+	found := false
 
-	for _, name := range names {
-		if recentlyUsed[name] {
+	for _, c := range sorted {
+		if recentlyUsed[c.name] {
 			continue
 		}
-		last, ok := reminders[name]
+		last, ok := reminders[c.name]
 		if !ok {
 			last = "0000-00-00"
 		}
 		if strings.Compare(last, bestDate) < 0 {
 			bestDate = last
-			bestName = name
+			best = c
+			found = true
 		}
 	}
 
-	if bestName == "" {
-		return "", Tool{}
-	}
-	return bestName, reg.Tools[bestName]
+	return best, found
 }
