@@ -116,7 +116,7 @@ func fetchChanges(ctx context.Context, owner, repo, fromTag, toTag string) ([]st
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("github api: %s", resp.Status)
