@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -255,6 +256,47 @@ func LoadGitAliases() ([]ShellAlias, error) {
 		if name != "" {
 			aliases = append(aliases, ShellAlias{Name: name, Command: cmd, Source: "gitconfig"})
 		}
+	}
+	return aliases, scanner.Err()
+}
+
+// forgitPluginPath resolves the forgit plugin file, honoring $ZSH_PLUGINS_DIR.
+func forgitPluginPath() string {
+	dir := os.Getenv("ZSH_PLUGINS_DIR")
+	if dir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		dir = filepath.Join(home, ".config", "zsh", "plugins")
+	}
+	return filepath.Join(dir, "forgit", "forgit.plugin.zsh")
+}
+
+// LoadForgitAliases parses forgit's fzf-git shortcut names from the plugin file.
+// forgit is sourced after aliases.sh, so these live in no file toolbox otherwise
+// reads. Names come from the `forgit_<action>="${forgit_<action>:-<name>}"`
+// defaults; the action becomes the description. A missing plugin is non-fatal.
+func LoadForgitAliases() ([]ShellAlias, error) {
+	f, err := os.Open(forgitPluginPath())
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+
+	re := regexp.MustCompile(`forgit_([a-z_]+)="\$\{forgit_[a-z_]+:-([a-zA-Z-]+)\}"`)
+	var aliases []ShellAlias
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		m := re.FindStringSubmatch(scanner.Text())
+		if m == nil {
+			continue
+		}
+		aliases = append(aliases, ShellAlias{
+			Name:    m[2],
+			Command: strings.ReplaceAll(m[1], "_", " "),
+			Source:  "forgit",
+		})
 	}
 	return aliases, scanner.Err()
 }

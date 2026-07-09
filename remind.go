@@ -92,6 +92,11 @@ func buildRemindCandidates(reg *Registry) []remindTarget {
 			cands = append(cands, remindTarget{name: g.Name, kind: "gitalias", al: g})
 		}
 	}
+	if forgits, err := LoadForgitAliases(); err == nil {
+		for _, fa := range forgits {
+			cands = append(cands, remindTarget{name: fa.Name, kind: "forgit", al: fa})
+		}
+	}
 	return cands
 }
 
@@ -112,6 +117,9 @@ func renderReminder(t remindTarget) {
 	case "gitalias":
 		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan("git "+t.al.Name), colorGreen("(git alias)"))
 		fmt.Printf("  %s git %s\n", colorYellow("↳"), t.al.Command)
+	case "forgit":
+		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.al.Name), colorGreen("(forgit)"))
+		fmt.Printf("  %s interactive git %s, via fzf\n", colorYellow("↳"), t.al.Command)
 	default: // tool
 		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(t.name))
 		fmt.Printf("  %s\n", t.tool.Description)
