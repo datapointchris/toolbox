@@ -19,12 +19,12 @@ const cutoffDays = 90
 
 var remindCmd = &cobra.Command{
 	Use:   "remind",
-	Short: "Surface a forgotten tool from the registry",
-	Long: `Cycles through all registry tools at shell startup, showing the one
-reminded least recently that hasn't been used in the last 90 days.
-Tracks reminder history in ~/.local/state/toolbox/reminders.json.
-Requires EXTENDED_HISTORY (setopt EXTENDED_HISTORY in .zshrc) for the
-90-day recency check.`,
+	Short: "Surface a forgotten tool, function, or alias",
+	Long: `Cycles through everything you own — registry tools, shell functions,
+shell aliases, git aliases, and forgit shortcuts — showing the one reminded
+least recently that you have not used in the last 90 days. Tracks reminder
+history in ~/.local/state/toolbox/reminders.json. Requires EXTENDED_HISTORY
+(setopt EXTENDED_HISTORY in .zshrc) for the 90-day recency check.`,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()
