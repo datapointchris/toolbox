@@ -48,7 +48,7 @@ toolbox aliases docker
 - `toolbox search <query>` - Search tools (case-insensitive)
 - `toolbox categories` - Interactive category picker with gum
 - `toolbox check` - Audit registry against installed tools
-- `toolbox remind` - Surface the least-recently-reminded tool from the registry
+- `toolbox remind` - Surface a forgotten tool, function, alias, git alias, or forgit shortcut (neglect-weighted, 90-day recency)
 - `toolbox funcs [filter]` - List shell functions parsed from dotfiles shell files
 - `toolbox aliases [filter]` - List shell aliases parsed from dotfiles shell files
 - `toolbox update` - Update toolbox to the latest release
