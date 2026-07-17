@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +53,38 @@ some code line
 	}
 	if funcs[0].Source != "functions.sh" {
 		t.Errorf("source = %q, want functions.sh", funcs[0].Source)
+	}
+}
+
+// TestParseFunctionsBody checks that the definition is captured from the
+// `name() {` line through the closing `}`, and that a following annotation ends
+// the previous body cleanly.
+func TestParseFunctionsBody(t *testing.T) {
+	content := `#@mkcd
+#--> Make a dir and cd into it
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
+
+#@greet
+#--> Say hi
+greet() {
+  echo "hi $1"
+}
+`
+	funcs, err := ParseFunctions(writeTempFile(t, "functions.sh", content))
+	if err != nil {
+		t.Fatalf("ParseFunctions: %v", err)
+	}
+	if len(funcs) != 2 {
+		t.Fatalf("expected 2 functions, got %d: %+v", len(funcs), funcs)
+	}
+	wantBody := "mkcd() {\n  mkdir -p \"$1\" && cd \"$1\"\n}"
+	if funcs[0].Body != wantBody {
+		t.Errorf("mkcd body = %q, want %q", funcs[0].Body, wantBody)
+	}
+	if funcs[1].Name != "greet" || !strings.Contains(funcs[1].Body, `echo "hi $1"`) {
+		t.Errorf("greet = %+v, want body containing the echo line", funcs[1])
 	}
 }
 

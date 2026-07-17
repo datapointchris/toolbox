@@ -27,10 +27,11 @@ import (
 //   # Description of what it does
 //   alias name='command'
 
-// ShellFunction holds a parsed function name and its description.
+// ShellFunction holds a parsed function name, its description, and its body.
 type ShellFunction struct {
 	Name        string
 	Description string
+	Body        string // the definition itself, from the `name() {` line through the closing `}`
 	Source      string // which file it came from (basename)
 }
 
@@ -94,6 +95,11 @@ func fileExists(path string) bool {
 // ParseFunctions scans a shell file for the #@name / #--> description pattern.
 // Both markers must appear on consecutive lines (the name line immediately
 // before the description line) — matching how the shell awk one-liner works.
+//
+// After the #--> line, the following lines are captured as the function Body up
+// to and including the first line beginning with `}`. This mirrors menu's
+// extract_function (`p&&/^}/{exit}`) so the reminder can show the actual
+// definition, not just the one-line description.
 func ParseFunctions(path string) ([]ShellFunction, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -104,12 +110,25 @@ func ParseFunctions(path string) ([]ShellFunction, error) {
 	source := filepath.Base(path)
 	var funcs []ShellFunction
 	var pendingName string
+	// When capturing, bodyLines accumulates the definition of funcs[currentIdx].
+	capturing := false
+	currentIdx := -1
+	var bodyLines []string
+
+	finishBody := func() {
+		if capturing && currentIdx >= 0 {
+			funcs[currentIdx].Body = strings.Join(bodyLines, "\n")
+		}
+		capturing = false
+		bodyLines = nil
+	}
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		if strings.HasPrefix(line, "#@") {
+			finishBody() // a new annotation ends any body still being captured
 			pendingName = strings.TrimSpace(line[2:])
 			continue
 		}
@@ -122,12 +141,24 @@ func ParseFunctions(path string) ([]ShellFunction, error) {
 				Source:      source,
 			})
 			pendingName = ""
+			capturing = true
+			currentIdx = len(funcs) - 1
+			bodyLines = nil
+			continue
+		}
+
+		if capturing {
+			bodyLines = append(bodyLines, line)
+			if strings.HasPrefix(line, "}") {
+				finishBody() // closing brace ends the definition
+			}
 			continue
 		}
 
 		// Any other line resets the pending name — the markers must be adjacent
 		pendingName = ""
 	}
+	finishBody() // a function at EOF with no closing brace still keeps what it had
 
 	return funcs, scanner.Err()
 }

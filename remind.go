@@ -107,6 +107,12 @@ func renderReminder(t remindTarget) {
 		if t.fn.Description != "" {
 			fmt.Printf("  %s\n", t.fn.Description)
 		}
+		if t.fn.Body != "" {
+			fmt.Println()
+			for _, line := range strings.Split(t.fn.Body, "\n") {
+				fmt.Printf("    %s\n", line)
+			}
+		}
 	case "alias":
 		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.name), colorGreen("(alias)"))
 		if t.al.Description != "" {
@@ -120,18 +126,12 @@ func renderReminder(t remindTarget) {
 		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.al.Name), colorGreen("(forgit)"))
 		fmt.Printf("  %s interactive git %s, via fzf\n", colorYellow("↳"), t.al.Command)
 	default: // tool
-		fmt.Printf("  %s — %s\n", colorYellow("reminder"), colorCyan(t.name))
-		fmt.Printf("  %s\n", t.tool.Description)
-		if t.tool.WhyUse != "" {
-			fmt.Printf("  %s %s\n", colorYellow("↳"), t.tool.WhyUse)
-		}
-		if len(t.tool.Examples) > 0 {
-			fmt.Println()
-			for _, ex := range t.tool.Examples {
-				fmt.Printf("    %s %s\n", colorGreen("$"), ex.Cmd)
-				fmt.Printf("      %s\n", ex.Desc)
-			}
-		}
+		// Show the full detail — the same view `toolbox show` and the interactive
+		// menu render — rather than a stripped-down card, so a reminder is a proper
+		// refresher. DisplayToolDetails prints its own boxed header with the name.
+		fmt.Printf("  %s — you haven't reached for %s lately:\n", colorYellow("reminder"), colorCyan(t.name))
+		fmt.Println()
+		DisplayToolDetails(t.name, t.tool)
 	}
 }
 
