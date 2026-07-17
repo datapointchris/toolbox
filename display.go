@@ -97,6 +97,13 @@ func DisplayToolDetails(name string, tool Tool) {
 		fmt.Println()
 	}
 
+	// Notes - operational gotchas worth reading before running the tool
+	if tool.Notes != "" {
+		fmt.Println(colorYellow("Notes:"))
+		fmt.Printf("  %s\n", tool.Notes)
+		fmt.Println()
+	}
+
 	// See also
 	if len(tool.SeeAlso) > 0 {
 		// strings.Join is like Python's ", ".join(list)

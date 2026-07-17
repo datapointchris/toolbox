@@ -15,7 +15,7 @@ type SearchResult struct {
 }
 
 // SearchTools finds all tools matching a query (case-insensitive)
-// Searches in: description, tags, why_use, and tool name itself
+// Searches in: description, tags, why_use, notes, and tool name itself
 // Returns slice of results sorted alphabetically by name
 func SearchTools(registry *Registry, query string) []SearchResult {
 	// Convert query to lowercase for case-insensitive search
@@ -59,6 +59,8 @@ func matchesTool(name string, tool Tool, query string) bool {
 	searchable.WriteString(strings.ToLower(tool.Description))
 	searchable.WriteString(" ")
 	searchable.WriteString(strings.ToLower(tool.WhyUse))
+	searchable.WriteString(" ")
+	searchable.WriteString(strings.ToLower(tool.Notes))
 
 	// Join all tags into the searchable string
 	// In Python: " ".join(tool.tags)

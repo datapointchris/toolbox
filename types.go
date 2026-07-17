@@ -19,6 +19,7 @@ type Tool struct {
 	InstalledVia string    `yaml:"installed_via"`
 	Usage        string    `yaml:"usage"`
 	WhyUse       string    `yaml:"why_use"`  // YAML snake_case maps to Go PascalCase
+	Notes        string    `yaml:"notes"`    // Operational gotchas (e.g. "must be sourced, not executed")
 	Examples     []Example `yaml:"examples"` // Slice (like Python list) of Example structs
 	SeeAlso      []string  `yaml:"see_also"` // Slice of strings
 	Tags         []string  `yaml:"tags"`

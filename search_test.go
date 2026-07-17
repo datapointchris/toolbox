@@ -89,6 +89,7 @@ func TestMatchesTool(t *testing.T) {
 		Description: "Fast search tool",
 		Tags:        []string{"search", "grep"},
 		WhyUse:      "Better than grep",
+		Notes:       "Must be sourced, not executed",
 	}
 
 	// Slice of test cases
@@ -102,6 +103,7 @@ func TestMatchesTool(t *testing.T) {
 		{"case insensitive", "SEARCH", true},
 		{"tag match", "grep", true},
 		{"partial match", "fast", true},
+		{"notes match", "sourced", true},
 		{"no match", "database", false},
 	}
 
