@@ -23,7 +23,7 @@ var remindCmd = &cobra.Command{
 	Long: `Cycles through everything you own — registry tools, shell functions,
 shell aliases, git aliases, and forgit shortcuts — showing the one reminded
 least recently that you have not used in the last 90 days. Tracks reminder
-history in ~/.local/state/toolbox/reminders.json. Requires EXTENDED_HISTORY
+history in ~/dev/toolbox-reminders.json. Requires EXTENDED_HISTORY
 (setopt EXTENDED_HISTORY in .zshrc) for the 90-day recency check.`,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -33,12 +33,11 @@ history in ~/.local/state/toolbox/reminders.json. Requires EXTENDED_HISTORY
 			os.Exit(1)
 		}
 
-		stateDir := getStateDir(home)
-		if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		remindersPath := getRemindersPath(home)
+		if err := os.MkdirAll(filepath.Dir(remindersPath), 0o755); err != nil {
 			fmt.Fprintf(os.Stderr, "%s cannot create state dir: %v\n", colorRed("Error:"), err)
 			os.Exit(1)
 		}
-		remindersPath := filepath.Join(stateDir, "reminders.json")
 
 		recentlyUsed := parseRecentlyUsed(home)
 		reminders := loadReminders(remindersPath)
@@ -136,11 +135,16 @@ func renderReminder(t remindTarget) {
 	}
 }
 
-func getStateDir(home string) string {
-	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-		return filepath.Join(xdg, "toolbox")
+// getRemindersPath returns the path to the reminder-history file. Checks
+// TOOLBOX_REMINDERS first, then falls back to ~/dev/toolbox-reminders.json.
+// Like the registry (GetRegistryPath), the last-reminded dates are Syncthing-
+// synced data, not machine-specific state: they follow you across machines so
+// the round-robin doesn't restart on each one — hence ~/dev/, not ~/.local/state.
+func getRemindersPath(home string) string {
+	if path := os.Getenv("TOOLBOX_REMINDERS"); path != "" {
+		return path
 	}
-	return filepath.Join(home, ".local", "state", "toolbox")
+	return filepath.Join(home, "dev", "toolbox-reminders.json")
 }
 
 // parseRecentlyUsed reads EXTENDED_HISTORY and returns tools used within cutoffDays.
