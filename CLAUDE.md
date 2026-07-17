@@ -4,11 +4,16 @@ Dotfiles tool discovery CLI written in Go.
 
 ## Releasing
 
-Releases are automated via GoReleaser + GitHub Actions.
+Releases are fully automated on push to `main` — do NOT tag manually. The
+`Release` workflow (`.github/workflows/release.yml`) runs `go-semantic-release`,
+which reads the conventional commits since the last release, decides the next
+version, creates the tag and GitHub release, and prepends to `CHANGELOG.md`.
+GoReleaser then builds binaries for linux/darwin × amd64/arm64 and attaches them.
 
-1. `git tag vX.Y.Z && git push origin vX.Y.Z`
-2. GitHub Actions builds binaries for linux/darwin x amd64/arm64
-3. Binaries appear on the GitHub releases page
+Just push conventional commits to `main`; the version and tag follow. A manual
+`git tag vX.Y.Z` pre-empts semantic-release — it sees the commit as already
+tagged, emits no version, and GoReleaser is skipped, so no binaries are built.
+If that happens, delete the stray tag (local and remote) and re-run the workflow.
 
 The `toolbox update` command pulls the latest release binary via `go-selfupdate`. No Go toolchain needed on target machines.
 
