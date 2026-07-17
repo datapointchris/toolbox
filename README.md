@@ -94,7 +94,9 @@ Tools are defined in `~/dev/tools.yml` (Syncthing-synced, override with `$TOOLBO
 - `check.go` - Registry audit against installed tools
 - `remind.go` - Least-recently-reminded tool surfacing
 - `update.go` - Self-update from GitHub releases
-- `search_test.go` - Tests
+- `search_test.go` - Search and matching tests
+- `shell_test.go` - Shell function/alias parsing tests
+- `remind_test.go` - History parsing and reminder-selection tests
 
 ## Comments
 
