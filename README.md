@@ -4,7 +4,7 @@ Dotfiles tool discovery system written in Go.
 
 ## Features
 
-- **Search**: Case-insensitive search across tool names, descriptions, tags, and usage
+- **Search**: Case-insensitive search across tool names, descriptions, tags, why-use, and notes
 - **Browse**: Interactive category → tool browser using gum
 - **Display**: Beautiful colored output with detailed tool information
 - **Fast**: Instant search and filtering
