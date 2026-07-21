@@ -21,4 +21,4 @@ The `toolbox update` command pulls the latest release binary via `go-selfupdate`
 
 ## Registry
 
-The tool registry lives at `~/dev/tools.yml` (override with `$TOOLBOX_REGISTRY`). It is Syncthing-synced data, not config. Commands that don't need the registry (`update`, `funcs`, `aliases`, `--help`) work without it.
+The tool registry is authored data, not config — owned by dotfiles and symlinked under the XDG data dir so it is version-controlled and reaches every machine. toolbox reads `$TOOLBOX_REGISTRY` if set, otherwise the XDG data path; reminder state defaults under the XDG state dir (`$TOOLBOX_REMINDERS` overrides). Commands that don't need the registry (`update`, `funcs`, `aliases`, `--help`) work without it.

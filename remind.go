@@ -23,7 +23,7 @@ var remindCmd = &cobra.Command{
 	Long: `Cycles through everything you own — registry tools, shell functions,
 shell aliases, git aliases, and forgit shortcuts — showing the one reminded
 least recently that you have not used in the last 90 days. Tracks reminder
-history in ~/dev/toolbox-reminders.json. Requires EXTENDED_HISTORY
+history under the XDG state dir. Requires EXTENDED_HISTORY
 (setopt EXTENDED_HISTORY in .zshrc) for the 90-day recency check.`,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -136,15 +136,16 @@ func renderReminder(t remindTarget) {
 }
 
 // getRemindersPath returns the path to the reminder-history file. Checks
-// TOOLBOX_REMINDERS first, then falls back to ~/dev/toolbox-reminders.json.
-// Like the registry (GetRegistryPath), the last-reminded dates are Syncthing-
-// synced data, not machine-specific state: they follow you across machines so
-// the round-robin doesn't restart on each one — hence ~/dev/, not ~/.local/state.
-func getRemindersPath(home string) string {
+// TOOLBOX_REMINDERS first, then falls back to the XDG state dir.
+// The last-reminded dates are mutable state, written as the round-robin
+// advances, so they live under the XDG state dir. They still follow you across
+// machines (so the rotation doesn't restart on each) — but that replication is
+// the sync layer's job, not something this path encodes.
+func getRemindersPath(_ string) string {
 	if path := os.Getenv("TOOLBOX_REMINDERS"); path != "" {
 		return path
 	}
-	return filepath.Join(home, "dev", "toolbox-reminders.json")
+	return filepath.Join(xdgStateHome(), "toolbox", "reminders.json")
 }
 
 // parseRecentlyUsed reads EXTENDED_HISTORY and returns tools used within cutoffDays.

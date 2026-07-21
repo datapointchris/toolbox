@@ -74,7 +74,7 @@ go test -v
 
 ## Registry
 
-Tools are defined in `~/dev/tools.yml` (Syncthing-synced, override with `$TOOLBOX_REGISTRY`)
+Tools are defined in a registry owned by dotfiles and symlinked under the XDG data dir (override with `$TOOLBOX_REGISTRY`)
 
 ## Dependencies
 

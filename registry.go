@@ -42,20 +42,16 @@ func LoadRegistry(path string) (*Registry, error) {
 }
 
 // GetRegistryPath returns the path to the registry file.
-// Checks TOOLBOX_REGISTRY env var first, then falls back to ~/dev/tools.yml.
-// The registry lives in ~/dev/ (Syncthing-synced) rather than ~/.config/ because
-// it is data about the tool ecosystem, not machine-specific configuration.
+// Checks TOOLBOX_REGISTRY first, then falls back to the XDG data dir. The
+// registry is authored data about the tool ecosystem (not machine-specific
+// config), owned by dotfiles and symlinked into place, so it is version-
+// controlled and reaches every machine — including ones the sync layer does not.
 func GetRegistryPath() string {
 	if path := os.Getenv("TOOLBOX_REGISTRY"); path != "" {
 		return path
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Sprintf("cannot determine home directory: %v", err))
-	}
-
-	return filepath.Join(home, "dev", "tools.yml")
+	return filepath.Join(xdgDataHome(), "toolbox", "registry.yml")
 }
 
 // ToolExists checks if a tool exists in the registry
