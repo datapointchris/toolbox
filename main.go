@@ -214,7 +214,7 @@ func main() {
 
 		// Check if it's a known command
 		// In Python: if arg not in ["list", "show", "search", "categories", "help"]
-		knownCommands := []string{"list", "show", "search", "categories", "check", "remind", "update", "funcs", "aliases", "help", "--help", "-h", "--version", "-v"}
+		knownCommands := []string{"list", "show", "search", "categories", "check", "remind", "update", "upgrade", "funcs", "aliases", "help", "--help", "-h", "--version", "-v"}
 		isKnownCommand := false
 		for _, cmd := range knownCommands {
 			if arg == cmd {

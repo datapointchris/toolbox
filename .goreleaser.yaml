@@ -16,7 +16,7 @@ builds:
       - arm64
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: "toolbox_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 changelog:
