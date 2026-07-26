@@ -1,6 +1,6 @@
 module github.com/datapointchris/toolbox
 
-go 1.24.11
+go 1.26.5
 
 require (
 	github.com/datapointchris/goselfupdate v0.1.0
