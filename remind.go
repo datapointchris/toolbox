@@ -17,6 +17,18 @@ import (
 
 const cutoffDays = 90
 
+// briefWidth caps each line of a --brief card. A fixed width rather than the
+// real terminal size: reading that needs golang.org/x/term, and one constant
+// narrow enough for any usable pane is not worth a dependency. Without it a
+// long example wraps and the card silently costs the extra line --brief exists
+// to save.
+const briefWidth = 72
+
+// remindBrief bounds the card to a few lines. Set by the shell-startup nudge
+// (`menu review`'s register runs `toolbox remind --brief`), where the full
+// detail view would bury the rest of the nudge.
+var remindBrief bool
+
 var remindCmd = &cobra.Command{
 	Use:   "remind",
 	Short: "Surface a forgotten tool, function, or alias",
@@ -48,13 +60,23 @@ history under the XDG state dir. Requires EXTENDED_HISTORY
 			return
 		}
 
-		fmt.Println()
-		renderReminder(target)
-		fmt.Println()
+		// The brief card is one line inside a larger nudge, so it skips the
+		// breathing room a standalone card wants.
+		if !remindBrief {
+			fmt.Println()
+		}
+		renderReminder(target, remindBrief)
+		if !remindBrief {
+			fmt.Println()
+		}
 
 		reminders[target.name] = time.Now().Format("2006-01-02")
 		saveReminders(remindersPath, reminders)
 	},
+}
+
+func init() {
+	remindCmd.Flags().BoolVar(&remindBrief, "brief", false, "Render a few lines instead of the full detail view")
 }
 
 // remindTarget is one thing worth resurfacing — a registry tool, a shell
@@ -100,32 +122,63 @@ func buildRemindCandidates(reg *Registry) []remindTarget {
 }
 
 // renderReminder prints the card for whichever kind of thing was picked.
-func renderReminder(t remindTarget) {
+//
+// Brief is a hard bound, not a hint: at most three lines, none wider than
+// briefWidth, for every kind. Two branches are otherwise unbounded — a tool
+// renders the whole detail view, and a function prints its entire body — and
+// either can swamp the shell-startup nudge this card sits inside.
+func renderReminder(t remindTarget, brief bool) {
+	// The title line is the same shape for every kind; only the label differs.
+	title := func(name, kind string) {
+		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(name), colorGreen("("+kind+")"))
+	}
+	detail := func(text string, indent int) {
+		if text == "" {
+			return
+		}
+		if brief {
+			text = clipBrief(text, indent)
+		}
+		fmt.Printf("  %s\n", text)
+	}
+	arrow := func(text string) {
+		if brief {
+			text = clipBrief(text, 4)
+		}
+		fmt.Printf("  %s %s\n", colorYellow("↳"), text)
+	}
+
 	switch t.kind {
 	case "function":
-		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.name), colorGreen("(shell function)"))
-		if t.fn.Description != "" {
-			fmt.Printf("  %s\n", t.fn.Description)
-		}
-		if t.fn.Body != "" {
+		title(t.name, "shell function")
+		detail(t.fn.Description, 2)
+		// The body is the refresher, and it is however long the function is —
+		// so it is exactly what brief drops. `toolbox remind` on demand shows it.
+		if t.fn.Body != "" && !brief {
 			fmt.Println()
 			for _, line := range strings.Split(t.fn.Body, "\n") {
 				fmt.Printf("    %s\n", line)
 			}
 		}
 	case "alias":
-		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.name), colorGreen("(alias)"))
-		if t.al.Description != "" {
-			fmt.Printf("  %s\n", t.al.Description)
-		}
-		fmt.Printf("  %s %s\n", colorYellow("↳"), t.al.Command)
+		title(t.name, "alias")
+		detail(t.al.Description, 2)
+		arrow(t.al.Command)
 	case "gitalias":
-		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan("git "+t.al.Name), colorGreen("(git alias)"))
-		fmt.Printf("  %s git %s\n", colorYellow("↳"), t.al.Command)
+		title("git "+t.al.Name, "git alias")
+		arrow("git " + t.al.Command)
 	case "forgit":
-		fmt.Printf("  %s — %s  %s\n", colorYellow("reminder"), colorCyan(t.al.Name), colorGreen("(forgit)"))
-		fmt.Printf("  %s interactive git %s, via fzf\n", colorYellow("↳"), t.al.Command)
+		title(t.al.Name, "forgit")
+		arrow(fmt.Sprintf("interactive git %s, via fzf", t.al.Command))
 	default: // tool
+		if brief {
+			title(t.name, "tool")
+			detail(t.tool.Description, 2)
+			if len(t.tool.Examples) > 0 {
+				arrow(t.tool.Examples[0].Cmd)
+			}
+			return
+		}
 		// Show the full detail — the same view `toolbox show` and the interactive
 		// menu render — rather than a stripped-down card, so a reminder is a proper
 		// refresher. DisplayToolDetails prints its own boxed header with the name.
@@ -133,6 +186,18 @@ func renderReminder(t remindTarget) {
 		fmt.Println()
 		DisplayToolDetails(t.name, t.tool)
 	}
+}
+
+// clipBrief shortens s to fit briefWidth alongside indent columns of prefix.
+// Measured in runes, not bytes, so a byte slice can't split a multi-byte
+// character and print a replacement glyph.
+func clipBrief(s string, indent int) string {
+	runes := []rune(s)
+	room := briefWidth - indent
+	if len(runes) <= room || room < 2 {
+		return s
+	}
+	return string(runes[:room-1]) + "…"
 }
 
 // getRemindersPath returns the path to the reminder-history file. Checks

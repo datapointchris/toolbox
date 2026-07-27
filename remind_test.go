@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ func TestRenderReminderToolShowsFullDetail(t *testing.T) {
 		DocsURL:      "https://example.com/mytool",
 	}
 	out := captureStdout(t, func() {
-		renderReminder(remindTarget{name: "mytool", kind: "tool", tool: tool})
+		renderReminder(remindTarget{name: "mytool", kind: "tool", tool: tool}, false)
 	})
 
 	// Fields the old stripped card omitted must now all be present.
@@ -68,6 +69,82 @@ func TestRenderReminderToolShowsFullDetail(t *testing.T) {
 	}
 }
 
+var ansiRE = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func stripANSI(s string) string { return ansiRE.ReplaceAllString(s, "") }
+
+// TestRenderReminderToolBriefStaysShort locks the bound the shell-startup nudge
+// depends on: --brief must not reach the full detail view however rich the tool,
+// and no line may wrap. Fields are deliberately longer than briefWidth so the
+// clip is exercised rather than merely not triggered.
+func TestRenderReminderToolBriefStaysShort(t *testing.T) {
+	tool := Tool{
+		Category:     "search",
+		Description:  strings.Repeat("a very wordy description ", 6),
+		InstalledVia: "brew",
+		Usage:        "mytool [flags] <pattern>",
+		WhyUse:       "fast recursive search",
+		Notes:        "respects .gitignore by default",
+		Examples:     []Example{{Cmd: "mytool foo " + strings.Repeat("--flag ", 20), Desc: "search for foo"}},
+		SeeAlso:      []string{"grep", "ag"},
+		Tags:         []string{"cli", "search"},
+		DocsURL:      "https://example.com/mytool",
+	}
+	out := captureStdout(t, func() {
+		renderReminder(remindTarget{name: "mytool", kind: "tool", tool: tool}, true)
+	})
+
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
+		if n := len([]rune(stripANSI(line))); n > briefWidth {
+			t.Errorf("brief line is %d cols, want <= %d: %q", n, briefWidth, line)
+		}
+	}
+	if lines := len(strings.Split(strings.TrimRight(out, "\n"), "\n")); lines > 3 {
+		t.Errorf("brief tool reminder is %d lines, want <= 3\n---\n%s", lines, out)
+	}
+	for _, want := range []string{"reminder", "mytool", "a very wordy description", "mytool foo"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("brief tool reminder missing %q\n---\n%s", want, out)
+		}
+	}
+	// The detail view's field labels are what make it long; none may appear.
+	for _, unwanted := range []string{"Usage:", "Notes:", "See also:", "Documentation:"} {
+		if strings.Contains(out, unwanted) {
+			t.Errorf("brief tool reminder leaked detail field %q\n---\n%s", unwanted, out)
+		}
+	}
+}
+
+// TestRenderReminderBriefBoundsEveryKind is the contract the startup nudge rests
+// on. Every field is longer than briefWidth and the function body is many lines,
+// so a kind that forgets to clip fails here rather than in a shell one morning.
+func TestRenderReminderBriefBoundsEveryKind(t *testing.T) {
+	long := strings.Repeat("wordy ", 40)
+	al := ShellAlias{Name: "al", Description: long, Command: long}
+	kinds := map[string]remindTarget{
+		"tool":     {name: "tl", kind: "tool", tool: Tool{Description: long, Examples: []Example{{Cmd: long}}}},
+		"function": {name: "fn", kind: "function", fn: ShellFunction{Description: long, Body: strings.Repeat("x\n", 30)}},
+		"alias":    {name: "al", kind: "alias", al: al},
+		"gitalias": {name: "al", kind: "gitalias", al: al},
+		"forgit":   {name: "al", kind: "forgit", al: al},
+	}
+
+	for kind, target := range kinds {
+		t.Run(kind, func(t *testing.T) {
+			out := captureStdout(t, func() { renderReminder(target, true) })
+			lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+			if len(lines) > 3 {
+				t.Errorf("%s brief card is %d lines, want <= 3\n---\n%s", kind, len(lines), out)
+			}
+			for _, line := range lines {
+				if n := len([]rune(stripANSI(line))); n > briefWidth {
+					t.Errorf("%s brief line is %d cols, want <= %d: %q", kind, n, briefWidth, line)
+				}
+			}
+		})
+	}
+}
+
 // TestRenderReminderFunctionShowsBody confirms a function reminder now includes
 // the captured definition, not just the one-line description.
 func TestRenderReminderFunctionShowsBody(t *testing.T) {
@@ -77,7 +154,7 @@ func TestRenderReminderFunctionShowsBody(t *testing.T) {
 		Body:        "mkcd() {\n  mkdir -p \"$1\" && cd \"$1\"\n}",
 	}
 	out := captureStdout(t, func() {
-		renderReminder(remindTarget{name: "mkcd", kind: "function", fn: fn})
+		renderReminder(remindTarget{name: "mkcd", kind: "function", fn: fn}, false)
 	})
 	for _, want := range []string{"mkcd", "make a dir and cd into it", "mkdir -p", "cd \"$1\""} {
 		if !strings.Contains(out, want) {
