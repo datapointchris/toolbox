@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
 
+	"github.com/datapointchris/goselfupdate/autoupdate"
+	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
 
@@ -41,10 +44,34 @@ var rootCmd = &cobra.Command{
 
 Discover and learn about the 98 tools in your dotfiles.
 Search by name, category, or tags. Browse interactively with gum.`,
-	// Run is called when command is executed without subcommands
-	Run: func(cmd *cobra.Command, args []string) {
-		_ = cmd.Help()
-	},
+	// A lone unrecognized argument is a search query, so `toolbox git` works.
+	// Cobra's default root validator rejects it as an unknown command, which is
+	// why the shortcut needs an explicit Args — and having one is what lets it
+	// live in RunE rather than ahead of Execute. It used to run in main against
+	// a hand-written list of every command name, and anything missing from that
+	// list was silently searched for instead: `toolbox completion` printed
+	// search results rather than shell completions.
+	Args: rootArgs,
+	RunE: runRoot,
+}
+
+func rootArgs(cmd *cobra.Command, args []string) error {
+	if len(args) > 1 {
+		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+	}
+	return nil
+}
+
+func runRoot(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cmd.Help()
+	}
+	if err := requireRegistryPreRun(cmd, args); err != nil {
+		return err
+	}
+	query := args[0]
+	DisplaySearchResults(SearchTools(registry, query), query)
+	return nil
 }
 
 // listCmd shows all tools grouped by category
@@ -207,38 +234,8 @@ func init() {
 // main is the program entry point
 // In Python, this would be: if __name__ == "__main__":
 func main() {
-	// Check if there's a single argument that isn't a known command
-	// Treat it as a search query (like "toolbox git")
-	if len(os.Args) == 2 {
-		arg := os.Args[1]
-
-		// Check if it's a known command
-		// In Python: if arg not in ["list", "show", "search", "categories", "help"]
-		knownCommands := []string{"list", "show", "search", "categories", "check", "remind", "update", "upgrade", "funcs", "aliases", "help", "--help", "-h", "--version", "-v"}
-		isKnownCommand := false
-		for _, cmd := range knownCommands {
-			if arg == cmd {
-				isKnownCommand = true
-				break
-			}
-		}
-
-		// If not a known command, treat as search query
-		if !isKnownCommand {
-			if err := requireRegistryPreRun(nil, nil); err != nil {
-				fmt.Fprintf(os.Stderr, "%s %v\n", colorRed("Error:"), err)
-				os.Exit(1)
-			}
-			results := SearchTools(registry, arg)
-			DisplaySearchResults(results, arg)
-			return
-		}
-	}
-
-	// Execute the root command
-	// This handles all subcommands, flags, help, etc.
-	// In Python with click: if __name__ == "__main__": cli()
-	if err := rootCmd.Execute(); err != nil {
+	autoConfig := autoupdate.Config{Update: updateConfig()}
+	if err := cobracmd.Execute(context.Background(), rootCmd, autoConfig); err != nil {
 		os.Exit(1)
 	}
 }

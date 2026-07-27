@@ -3,7 +3,7 @@ module github.com/datapointchris/toolbox
 go 1.26.5
 
 require (
-	github.com/datapointchris/goselfupdate v0.1.0
+	github.com/datapointchris/goselfupdate v0.4.0
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
