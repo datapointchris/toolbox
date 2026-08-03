@@ -103,9 +103,9 @@ func buildRemindCandidates(reg *Registry) []remindTarget {
 			cands = append(cands, remindTarget{name: fn.Name, kind: "function", fn: fn})
 		}
 	}
-	if als, err := LoadShellAliases(); err == nil {
-		for _, al := range als {
-			cands = append(cands, remindTarget{name: al.Name, kind: "alias", al: al})
+	if aliases, err := LoadShellAliases(); err == nil {
+		for _, alias := range aliases {
+			cands = append(cands, remindTarget{name: alias.Name, kind: "alias", al: alias})
 		}
 	}
 	if gits, err := LoadGitAliases(); err == nil {

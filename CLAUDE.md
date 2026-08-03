@@ -11,7 +11,7 @@ version, creates the tag and GitHub release, and prepends to `CHANGELOG.md`.
 GoReleaser then builds binaries for linux/darwin × amd64/arm64 and attaches them.
 
 Just push conventional commits to `main`; the version and tag follow. A manual
-`git tag vX.Y.Z` pre-empts semantic-release — it sees the commit as already
+`git tag vX.Y.Z` preempts semantic-release — it sees the commit as already
 tagged, emits no version, and GoReleaser is skipped, so no binaries are built.
 If that happens, delete the stray tag (local and remote) and re-run the workflow.
 
