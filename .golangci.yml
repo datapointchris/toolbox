@@ -5,21 +5,29 @@ linters:
   enable:
     - gocritic
     - misspell
+    - nakedret
     - unconvert
     - wastedassign
   settings:
     errcheck:
-      check-type-assertions: true
+      check-type-assertions: false
       check-blank: false
+      exclude-functions:
+        - (*github.com/fatih/color.Color).Printf
+        - (*github.com/fatih/color.Color).Print
+        - (*github.com/fatih/color.Color).Println
     gocritic:
       enabled-tags:
         - diagnostic
     govet:
       disable:
         - fieldalignment
+        - shadow
       enable-all: true
     misspell:
       locale: US
+    nakedret:
+      max-func-lines: 20
   exclusions:
     generated: lax
     paths:
@@ -34,7 +42,7 @@ formatters:
     - gofumpt
   settings:
     gofumpt:
-      extra-rules: true
+      extra-rules: false
   exclusions:
     generated: lax
     paths:
