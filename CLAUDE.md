@@ -15,7 +15,7 @@ Just push conventional commits to `main`; the version and tag follow. A manual
 tagged, emits no version, and GoReleaser is skipped, so no binaries are built.
 If that happens, delete the stray tag (local and remote) and re-run the workflow.
 
-The `toolbox update` command pulls the latest release binary via `go-selfupdate`. No Go toolchain needed on target machines.
+The `toolbox update` command pulls the latest release binary via `goselfupdate` — the fleet's own library at `github.com/datapointchris/goselfupdate`, not the third-party `go-selfupdate`, which carries `GO-2026-5932`. No Go toolchain needed on target machines.
 
 **Versioning**: `fix:` commits get a patch bump, `feat:` commits get a minor bump. The version is injected at build time via ldflags (`-X main.buildVersion`).
 
