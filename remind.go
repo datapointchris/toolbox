@@ -37,6 +37,12 @@ const briefWidth = 72
 // detail view would bury the rest of the nudge.
 var remindBrief bool
 
+// remindPeek shows the card without recording that it was shown, so the rotation
+// does not advance. Separate from remindBrief because presentation and side
+// effect are different questions: a card can be short and still count, and a
+// full card can be a look that does not.
+var remindPeek bool
+
 var remindCmd = &cobra.Command{
 	Use:   "remind",
 	Short: "Surface a forgotten tool, function, or alias",
@@ -47,7 +53,11 @@ history under the XDG state dir.
 
 Recency comes from atuin, so a tool reached for on any machine counts. Without
 atuin it falls back to this machine's zsh history, which needs EXTENDED_HISTORY
-(setopt EXTENDED_HISTORY in .zshrc) and only ever answers for this machine.`,
+(setopt EXTENDED_HISTORY in .zshrc) and only ever answers for this machine.
+
+Running this advances the rotation. --peek shows the same card without
+advancing, so an automated nudge can display one repeatedly and the rotation
+still only moves when you reach for the tool yourself.`,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()
@@ -81,13 +91,28 @@ atuin it falls back to this machine's zsh history, which needs EXTENDED_HISTORY
 			fmt.Println()
 		}
 
-		reminders[target.name] = time.Now().Format("2006-01-02")
-		saveReminders(remindersPath, reminders)
+		recordReminder(remindersPath, reminders, target.name, remindPeek)
 	},
+}
+
+// recordReminder advances the rotation past name, unless this was only a peek.
+//
+// A peek leaves the rotation where it was, so the same tool keeps coming back
+// until it is actually reached for. Advancing on display instead would let an
+// automated nudge walk the whole roster while none of it was read, and leave
+// nothing afterwards able to tell a card that was shown from a tool that was
+// used.
+func recordReminder(path string, reminders remindersMap, name string, peek bool) {
+	if peek {
+		return
+	}
+	reminders[name] = time.Now().Format("2006-01-02")
+	saveReminders(path, reminders)
 }
 
 func init() {
 	remindCmd.Flags().BoolVar(&remindBrief, "brief", false, "Render a few lines instead of the full detail view")
+	remindCmd.Flags().BoolVar(&remindPeek, "peek", false, "Show the card without advancing the rotation")
 }
 
 // remindTarget is one thing worth resurfacing — a registry tool, a shell

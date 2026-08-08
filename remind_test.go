@@ -335,3 +335,43 @@ func TestRecentlyUsedFallsBackWhenAtuinIsAbsent(t *testing.T) {
 		t.Errorf("want eza from the zsh fallback, got %v", used)
 	}
 }
+
+func TestPeekDoesNotAdvanceTheRotation(t *testing.T) {
+	// An automated nudge displays the card repeatedly; if display advanced the
+	// rotation it would walk the whole roster while none of it was read, and
+	// nothing afterwards could tell a shown card from a tool that was used.
+	path := filepath.Join(t.TempDir(), "reminders.json")
+	reminders := remindersMap{"eza": "2026-01-01"}
+
+	recordReminder(path, reminders, "eza", true)
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Error("a peek must not write the store at all")
+	}
+	if reminders["eza"] != "2026-01-01" {
+		t.Errorf("want the stamp untouched, got %v", reminders)
+	}
+}
+
+func TestRunningItAdvancesTheRotation(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "reminders.json")
+	reminders := remindersMap{"eza": "2026-01-01"}
+
+	recordReminder(path, reminders, "eza", false)
+
+	today := time.Now().Format("2006-01-02")
+	if loadReminders(path)["eza"] != today {
+		t.Errorf("want eza stamped %s in the store, got %v", today, loadReminders(path))
+	}
+}
+
+func TestRemindFlagsAreIndependent(t *testing.T) {
+	// brief is presentation, peek is a side effect. Folding one into the other
+	// would make a short card silently non-counting.
+	if remindCmd.Flags().Lookup("peek") == nil {
+		t.Fatal("peek flag missing")
+	}
+	if remindCmd.Flags().Lookup("brief") == nil {
+		t.Fatal("brief flag missing")
+	}
+}
