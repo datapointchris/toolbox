@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -57,7 +58,7 @@ Search by name, category, or tags. Browse interactively with gum.`,
 
 func rootArgs(cmd *cobra.Command, args []string) error {
 	if len(args) > 1 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		return cobracmd.UsageError(fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath()))
 	}
 	return nil
 }
@@ -236,6 +237,11 @@ func init() {
 func main() {
 	autoConfig := autoupdate.Config{Update: updateConfig()}
 	if err := cobracmd.Execute(context.Background(), rootCmd, autoConfig); err != nil {
+		// 2 says the command line was wrong rather than the run, which is the
+		// only failure a caller should retry with different arguments.
+		if errors.Is(err, cobracmd.ErrUsage) {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
 }
