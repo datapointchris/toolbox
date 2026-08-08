@@ -277,3 +277,61 @@ func TestPickRemindTarget(t *testing.T) {
 		}
 	})
 }
+
+func TestMarkUsedRecordsTheCommand(t *testing.T) {
+	used := map[string]bool{}
+	markUsed(used, "eza -la --tree")
+
+	if !used["eza"] {
+		t.Error("the command itself must be recorded as used")
+	}
+	if used["-la"] {
+		t.Error("arguments are not commands")
+	}
+}
+
+func TestMarkUsedRecordsAGitAliasAsUsed(t *testing.T) {
+	// Git aliases are invoked as `git co`, so recording only the first word would
+	// leave every git alias looking unused and resurfacing forever.
+	used := map[string]bool{}
+	markUsed(used, "git co main")
+
+	if !used["git"] || !used["co"] {
+		t.Errorf("want both git and co recorded, got %v", used)
+	}
+}
+
+func TestMarkUsedIgnoresASecondWordOutsideGit(t *testing.T) {
+	used := map[string]bool{}
+	markUsed(used, "docker compose up")
+
+	if used["compose"] {
+		t.Error("only git takes a subcommand as a name of its own")
+	}
+}
+
+func TestMarkUsedSurvivesAnEmptyLine(t *testing.T) {
+	used := map[string]bool{}
+	markUsed(used, "   ")
+
+	if len(used) != 0 {
+		t.Errorf("want nothing recorded, got %v", used)
+	}
+}
+
+func TestRecentlyUsedFallsBackWhenAtuinIsAbsent(t *testing.T) {
+	// PATH without atuin stands in for a machine that has not installed it; the
+	// zsh history must still answer rather than the reminder going blank.
+	t.Setenv("PATH", t.TempDir())
+
+	history := filepath.Join(t.TempDir(), "history")
+	recent := time.Now().Add(-24 * time.Hour).Unix()
+	if err := os.WriteFile(history, []byte(fmt.Sprintf(": %d:0;eza -la\n", recent)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HISTFILE", history)
+
+	if used := recentlyUsed("/nonexistent-home"); !used["eza"] {
+		t.Errorf("want eza from the zsh fallback, got %v", used)
+	}
+}

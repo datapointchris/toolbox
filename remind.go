@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -17,6 +20,11 @@ import (
 
 const cutoffDays = 90
 
+// atuinTimeout bounds the history query. remind runs inside the shell-startup
+// nudge, so a store that has become slow must cost a bounded pause and fall back,
+// never hang the first prompt of the day.
+const atuinTimeout = 5 * time.Second
+
 // briefWidth caps each line of a --brief card. A fixed width rather than the
 // real terminal size: reading that needs golang.org/x/term, and one constant
 // narrow enough for any usable pane is not worth a dependency. Without it a
@@ -25,7 +33,7 @@ const cutoffDays = 90
 const briefWidth = 72
 
 // remindBrief bounds the card to a few lines. Set by the shell-startup nudge
-// (`menu review`'s register runs `toolbox remind --brief`), where the full
+// (`doit review`'s register runs `toolbox remind --brief`), where the full
 // detail view would bury the rest of the nudge.
 var remindBrief bool
 
@@ -35,8 +43,11 @@ var remindCmd = &cobra.Command{
 	Long: `Cycles through everything you own — registry tools, shell functions,
 shell aliases, git aliases, and forgit shortcuts — showing the one reminded
 least recently that you have not used in the last 90 days. Tracks reminder
-history under the XDG state dir. Requires EXTENDED_HISTORY
-(setopt EXTENDED_HISTORY in .zshrc) for the 90-day recency check.`,
+history under the XDG state dir.
+
+Recency comes from atuin, so a tool reached for on any machine counts. Without
+atuin it falls back to this machine's zsh history, which needs EXTENDED_HISTORY
+(setopt EXTENDED_HISTORY in .zshrc) and only ever answers for this machine.`,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()
@@ -51,11 +62,11 @@ history under the XDG state dir. Requires EXTENDED_HISTORY
 			os.Exit(1)
 		}
 
-		recentlyUsed := parseRecentlyUsed(home)
+		used := recentlyUsed(home)
 		reminders := loadReminders(remindersPath)
 
 		candidates := buildRemindCandidates(registry)
-		target, ok := pickRemindTarget(candidates, recentlyUsed, reminders)
+		target, ok := pickRemindTarget(candidates, used, reminders)
 		if !ok {
 			return
 		}
@@ -213,6 +224,51 @@ func getRemindersPath(_ string) string {
 	return filepath.Join(xdgStateHome(), "toolbox", "reminders.json")
 }
 
+// recentlyUsed returns everything invoked within cutoffDays, from atuin when it
+// answers and this machine's zsh history when it does not.
+//
+// atuin is preferred because it syncs: a tool reached for at the other desk has
+// been reached for, and resurfacing it here would be reminding you of something
+// you already use. The zsh file only ever describes this machine, so on the
+// fallback path a fleet-wide question quietly narrows to a local one — the same
+// answer toolbox gave before atuin existed, which is the right way to degrade.
+func recentlyUsed(home string) map[string]bool {
+	if used, ok := atuinRecentlyUsed(); ok {
+		return used
+	}
+	return parseRecentlyUsed(home)
+}
+
+// atuinRecentlyUsed asks atuin for every command run since the cutoff. The bool
+// reports whether atuin could be asked at all, which is not the same as finding
+// nothing: an empty window is an answer, a missing binary is not.
+func atuinRecentlyUsed() (map[string]bool, bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), atuinTimeout)
+	defer cancel()
+
+	since := time.Now().AddDate(0, 0, -cutoffDays).Format("2006-01-02")
+	// The default dedupe is wanted here: this asks which commands were used, not
+	// how often or where, so one row per distinct command is the whole answer.
+	cmd := exec.CommandContext(ctx, "atuin", "search",
+		"--search-mode", "prefix",
+		"--after", since,
+		"--limit", "200000",
+		"--format", "{command}",
+		"")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, false
+	}
+
+	used := make(map[string]bool)
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	for scanner.Scan() {
+		markUsed(used, scanner.Text())
+	}
+	return used, true
+}
+
 // parseRecentlyUsed reads EXTENDED_HISTORY and returns tools used within cutoffDays.
 // EXTENDED_HISTORY format: ": timestamp:elapsed;command args..."
 func parseRecentlyUsed(home string) map[string]bool {
@@ -230,10 +286,7 @@ func parseRecentlyUsed(home string) map[string]bool {
 	defer func() { _ = f.Close() }()
 
 	cutoff := time.Now().Unix() - cutoffDays*86400
-	// Capture the command and an optional second word. The second word matters
-	// for git aliases: they are invoked as `git co`, so without it a git alias is
-	// never seen as used and would resurface forever.
-	re := regexp.MustCompile(`^: (\d+):\d+;(\S+)(?:\s+(\S+))?`)
+	re := regexp.MustCompile(`^: (\d+):\d+;(.*)$`)
 
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
@@ -246,13 +299,23 @@ func parseRecentlyUsed(home string) map[string]bool {
 		if err != nil || ts <= cutoff {
 			continue
 		}
-		used[m[2]] = true
-		// `git co` marks the git alias `co` as used, not just `git`.
-		if m[2] == "git" && m[3] != "" {
-			used[m[3]] = true
-		}
+		markUsed(used, m[2])
 	}
 	return used
+}
+
+// markUsed records the command a line invoked, plus its second word when the
+// command is `git`. Git aliases are invoked as `git co`, so without the second
+// word a git alias is never seen as used and resurfaces forever.
+func markUsed(used map[string]bool, command string) {
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return
+	}
+	used[fields[0]] = true
+	if fields[0] == "git" && len(fields) > 1 {
+		used[fields[1]] = true
+	}
 }
 
 type remindersMap map[string]string
