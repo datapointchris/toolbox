@@ -1,4 +1,4 @@
-module github.com/datapointchris/toolbox
+module github.com/datapointchris/toolbox/v2
 
 go 1.26.5
 
