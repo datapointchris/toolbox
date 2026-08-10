@@ -47,7 +47,6 @@ toolbox aliases docker
 - `toolbox show <tool>` - Show detailed information about a tool
 - `toolbox search <query>` - Search tools (case-insensitive)
 - `toolbox categories` - Interactive category picker with gum
-- `toolbox check` - Audit registry against installed tools
 - `toolbox remind` - Surface a forgotten tool, function, alias, git alias, or forgit shortcut (neglect-weighted, 90-day recency)
 - `toolbox funcs [filter]` - List shell functions parsed from dotfiles shell files
 - `toolbox aliases [filter]` - List shell aliases parsed from dotfiles shell files
@@ -91,7 +90,6 @@ Tools are defined in a registry owned by dotfiles and symlinked under the XDG da
 - `display.go` - Output formatting
 - `interactive.go` - Gum integration
 - `shell.go` - Shell function and alias parsing from `~/.local/shell/`
-- `check.go` - Registry audit against installed tools
 - `remind.go` - Least-recently-reminded tool surfacing
 - `update.go` - Self-update from GitHub releases
 - `search_test.go` - Search and matching tests

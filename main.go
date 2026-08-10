@@ -226,7 +226,6 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(searchCmd)
 	rootCmd.AddCommand(categoriesCmd)
-	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(remindCmd)
 	rootCmd.AddCommand(funcsCmd)
 	rootCmd.AddCommand(aliasesCmd)
