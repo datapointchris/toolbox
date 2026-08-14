@@ -2,6 +2,8 @@ module github.com/datapointchris/toolbox
 
 go 1.26.5
 
+toolchain go1.26.6
+
 require (
 	github.com/datapointchris/goselfupdate v0.7.0
 	github.com/spf13/cobra v1.10.2
