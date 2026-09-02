@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"runtime/debug"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
-	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +58,7 @@ Search by name, category, or tags. Browse interactively with gum.`,
 
 func rootArgs(cmd *cobra.Command, args []string) error {
 	if len(args) > 1 {
-		return cobracmd.UsageError(fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath()))
+		return goclikit.UsageError(fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath()))
 	}
 	return nil
 }
@@ -235,10 +235,10 @@ func init() {
 // In Python, this would be: if __name__ == "__main__":
 func main() {
 	autoConfig := autoupdate.Config{Update: updateConfig()}
-	if err := cobracmd.Execute(context.Background(), rootCmd, autoConfig); err != nil {
+	if err := goclikit.Execute(context.Background(), rootCmd, autoConfig); err != nil {
 		// 2 says the command line was wrong rather than the run, which is the
 		// only failure a caller should retry with different arguments.
-		if errors.Is(err, cobracmd.ErrUsage) {
+		if errors.Is(err, goclikit.ErrUsage) {
 			os.Exit(2)
 		}
 		os.Exit(1)
