@@ -2,7 +2,7 @@ module github.com/datapointchris/toolbox
 
 go 1.26.5
 
-toolchain go1.26.6
+toolchain go1.26.9
 
 require (
 	github.com/datapointchris/goclikit v0.3.2
