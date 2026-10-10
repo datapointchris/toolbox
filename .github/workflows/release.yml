@@ -13,45 +13,14 @@ jobs:
   validate:
     uses: ./.github/workflows/validate.yml
 
-  semver:
+  # The shared workflow cuts nothing when main has moved past this run's
+  # commit, and leaves the release to the newer push's run. Tagging the older
+  # commit would be refused with a 403 whenever that push changed a workflow
+  # file, because GITHUB_TOKEN holds no workflows permission.
+  release:
     needs: validate
-    runs-on: ubuntu-latest
+    uses: datapointchris/reusable-workflows/.github/workflows/go-semantic-release.yml@v1
     permissions:
       contents: write
-    outputs:
-      version: ${{ steps.semrel.outputs.version }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - uses: go-semantic-release/action@453e003c94ddb9c64e7ea4153794ef69e477259e # v1
-        id: semrel
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          changelog-file: CHANGELOG.md
-          prepend: true
-
-  goreleaser:
-    needs: semver
-    if: needs.semver.outputs.version != ''
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: v${{ needs.semver.outputs.version }}
-
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
-        with:
-          distribution: goreleaser
-          version: v2.17.0
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      goreleaser: true
