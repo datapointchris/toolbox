@@ -58,6 +58,7 @@ atuin it falls back to this machine's zsh history, which needs EXTENDED_HISTORY
 Running this advances the rotation. --peek shows the same card without
 advancing, so an automated nudge can display one repeatedly and the rotation
 still only moves when you reach for the tool yourself.`,
+	Args:    noArgs,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		home, err := os.UserHomeDir()

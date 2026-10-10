@@ -69,6 +69,23 @@ func rootArgs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// noArgs refuses a word on a command that takes none, the way the root refuses
+// a second one.
+func noArgs(cmd *cobra.Command, args []string) error {
+	if len(args) > 0 {
+		return goclikit.UnknownCommand(cmd, args[0])
+	}
+	return nil
+}
+
+// usage marks an argument-count failure as a usage error so it exits 2. Cobra
+// returns it as a plain error, which would exit 1 as a failed run.
+func usage(validate cobra.PositionalArgs) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		return goclikit.UsageError(validate(cmd, args))
+	}
+}
+
 func runRoot(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return cmd.Help()
@@ -85,6 +102,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Short:   "List all tools grouped by category",
+	Args:    noArgs,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		DisplayListByCategory(registry)
@@ -95,7 +113,7 @@ var listCmd = &cobra.Command{
 var showCmd = &cobra.Command{
 	Use:     "show <tool>",
 	Short:   "Show detailed information about a tool",
-	Args:    cobra.ExactArgs(1),
+	Args:    usage(cobra.ExactArgs(1)),
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		toolName := args[0]
@@ -116,7 +134,7 @@ var showCmd = &cobra.Command{
 var searchCmd = &cobra.Command{
 	Use:     "search <query>",
 	Short:   "Search tools by description, tags, or name",
-	Args:    cobra.ExactArgs(1),
+	Args:    usage(cobra.ExactArgs(1)),
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		query := args[0]
@@ -129,6 +147,7 @@ var searchCmd = &cobra.Command{
 var categoriesCmd = &cobra.Command{
 	Use:     "categories",
 	Short:   "Browse tools by category (interactive)",
+	Args:    noArgs,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if gum is installed
@@ -155,7 +174,7 @@ Parses functions.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
 Functions are identified by the #@name / #--> description marker convention.
 
 Optionally filter by name or description (case-insensitive).`,
-	Args: cobra.MaximumNArgs(1),
+	Args: usage(cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		filter := ""
 		if len(args) > 0 {
@@ -183,7 +202,7 @@ Parses aliases.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
 The comment line immediately above each alias is used as its description.
 
 Optionally filter by name, command, or description (case-insensitive).`,
-	Args: cobra.MaximumNArgs(1),
+	Args: usage(cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		filter := ""
 		if len(args) > 0 {

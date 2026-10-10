@@ -62,6 +62,37 @@ func TestAnUnknownCommandIsAnsweredWithoutTheUsageScreen(t *testing.T) {
 	}
 }
 
+// Cobra runs a command that declares no Args with whatever words follow it, so
+// `toolbox list git` would print every tool as though it had filtered them.
+func TestAWordOnACommandTakingNoneIsRefused(t *testing.T) {
+	for _, command := range []string{"list", "categories", "remind"} {
+		t.Run(command, func(t *testing.T) {
+			code, stderr := runLine(t, command, "bogus")
+
+			if code != 2 {
+				t.Errorf("exit = %d, want 2", code)
+			}
+			if want := `unknown command "bogus" for "toolbox ` + command + `"`; !strings.Contains(stderr, want) {
+				t.Errorf("the word was not refused:\n%s", stderr)
+			}
+		})
+	}
+}
+
+// Cobra returns a wrong argument count as a plain error, which exits 1 as
+// though the command had run and failed.
+func TestAWrongArgumentCountExitsTwo(t *testing.T) {
+	for _, line := range [][]string{{"show"}, {"search"}, {"funcs", "one", "two"}, {"aliases", "one", "two"}} {
+		t.Run(strings.Join(line, " "), func(t *testing.T) {
+			code, stderr := runLine(t, line...)
+
+			if code != 2 {
+				t.Errorf("exit = %d, want 2:\n%s", code, stderr)
+			}
+		})
+	}
+}
+
 // Two words make the first a command, and a slip from one is answered with it.
 func TestAMistypedCommandNamesTheNearOne(t *testing.T) {
 	code, stderr := runLine(t, "lisy", "extra")
