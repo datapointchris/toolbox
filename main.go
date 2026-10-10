@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -54,11 +55,16 @@ Search by name, category, or tags. Browse interactively with gum.`,
 	// search results rather than shell completions.
 	Args: rootArgs,
 	RunE: runRoot,
+	// run prints the error once, carrying the pointer to --help. Cobra printing
+	// it as well would follow it with the whole usage screen, and `update`,
+	// which silences cobra, would print nothing at all.
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func rootArgs(cmd *cobra.Command, args []string) error {
 	if len(args) > 1 {
-		return goclikit.UsageError(fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath()))
+		return goclikit.UnknownCommand(cmd, args[0])
 	}
 	return nil
 }
@@ -234,13 +240,23 @@ func init() {
 // main is the program entry point
 // In Python, this would be: if __name__ == "__main__":
 func main() {
-	autoConfig := autoupdate.Config{Update: updateConfig()}
-	if err := goclikit.Execute(context.Background(), rootCmd, autoConfig); err != nil {
-		// 2 says the command line was wrong rather than the run, which is the
-		// only failure a caller should retry with different arguments.
-		if errors.Is(err, goclikit.ErrUsage) {
-			os.Exit(2)
-		}
-		os.Exit(1)
+	os.Exit(run(os.Stderr, autoupdate.Config{Update: updateConfig()}))
+}
+
+// run is main without the exit, so a test can read the code and the error.
+func run(stderr io.Writer, autoConfig autoupdate.Config) int {
+	err := goclikit.Execute(context.Background(), rootCmd, autoConfig)
+	if err == nil {
+		return 0
 	}
+	// `update` prints its own ✓/✗ line, so printing here would say it twice.
+	if !errors.Is(err, goclikit.ErrReported) {
+		_, _ = fmt.Fprintln(stderr, colorRed("Error:"), err)
+	}
+	// 2 says the command line was wrong rather than the run, which is the
+	// only failure a caller should retry with different arguments.
+	if errors.Is(err, goclikit.ErrUsage) {
+		return 2
+	}
+	return 1
 }
