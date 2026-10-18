@@ -17,6 +17,11 @@ func runLine(t *testing.T, args ...string) (int, string) {
 	t.Helper()
 	original := os.Args
 	os.Args = append([]string{"toolbox"}, args...)
+	// Execute resolves the command from the root's parsed words where it has
+	// any, and a line an earlier test ran on the root leaves its words there.
+	if err := rootCmd.Flags().Parse(nil); err != nil {
+		t.Fatal(err)
+	}
 	var output bytes.Buffer
 	rootCmd.SetOut(&output)
 	rootCmd.SetErr(&output)
@@ -80,9 +85,10 @@ func TestAWordOnACommandTakingNoneIsRefused(t *testing.T) {
 }
 
 // Cobra returns a wrong argument count as a plain error, which exits 1 as
-// though the command had run and failed.
+// though the command had run and failed. A bare command is answered with its
+// help and one given too many words with the refusal, so each has a line.
 func TestAWrongArgumentCountExitsTwo(t *testing.T) {
-	for _, line := range [][]string{{"show"}, {"search"}, {"funcs", "one", "two"}, {"aliases", "one", "two"}} {
+	for _, line := range [][]string{{"show"}, {"funcs", "one", "two"}} {
 		t.Run(strings.Join(line, " "), func(t *testing.T) {
 			code, stderr := runLine(t, line...)
 

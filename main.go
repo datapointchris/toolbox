@@ -49,10 +49,7 @@ Search by name, category, or tags. Browse interactively with gum.`,
 	// A lone unrecognized argument is a search query, so `toolbox git` works.
 	// Cobra's default root validator rejects it as an unknown command, which is
 	// why the shortcut needs an explicit Args — and having one is what lets it
-	// live in RunE rather than ahead of Execute. It used to run in main against
-	// a hand-written list of every command name, and anything missing from that
-	// list was silently searched for instead: `toolbox completion` printed
-	// search results rather than shell completions.
+	// live in RunE rather than ahead of Execute.
 	Args: rootArgs,
 	RunE: runRoot,
 	// run prints the error once, carrying the pointer to --help. Cobra printing
@@ -76,14 +73,6 @@ func noArgs(cmd *cobra.Command, args []string) error {
 		return goclikit.UnknownCommand(cmd, args[0])
 	}
 	return nil
-}
-
-// usage marks an argument-count failure as a usage error so it exits 2. Cobra
-// returns it as a plain error, which would exit 1 as a failed run.
-func usage(validate cobra.PositionalArgs) cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		return goclikit.UsageError(validate(cmd, args))
-	}
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -113,7 +102,7 @@ var listCmd = &cobra.Command{
 var showCmd = &cobra.Command{
 	Use:     "show <tool>",
 	Short:   "Show detailed information about a tool",
-	Args:    usage(cobra.ExactArgs(1)),
+	Args:    cobra.ExactArgs(1),
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		toolName := args[0]
@@ -134,7 +123,7 @@ var showCmd = &cobra.Command{
 var searchCmd = &cobra.Command{
 	Use:     "search <query>",
 	Short:   "Search tools by description, tags, or name",
-	Args:    usage(cobra.ExactArgs(1)),
+	Args:    cobra.ExactArgs(1),
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		query := args[0]
@@ -174,7 +163,7 @@ Parses functions.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
 Functions are identified by the #@name / #--> description marker convention.
 
 Optionally filter by name or description (case-insensitive).`,
-	Args: usage(cobra.MaximumNArgs(1)),
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		filter := ""
 		if len(args) > 0 {
@@ -202,7 +191,7 @@ Parses aliases.sh and $PLATFORM.sh from $SHELL_DIR (~/.local/shell/).
 The comment line immediately above each alias is used as its description.
 
 Optionally filter by name, command, or description (case-insensitive).`,
-	Args: usage(cobra.MaximumNArgs(1)),
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		filter := ""
 		if len(args) > 0 {
@@ -268,7 +257,9 @@ func run(stderr io.Writer, autoConfig autoupdate.Config) int {
 	if err == nil {
 		return 0
 	}
-	// `update` prints its own ✓/✗ line, so printing here would say it twice.
+	// A reported error is already on screen, so printing here would say it
+	// twice. `update` prints its own ✓/✗ line. A command given none of the
+	// arguments it requires prints its help.
 	if !errors.Is(err, goclikit.ErrReported) {
 		_, _ = fmt.Fprintln(stderr, colorRed("Error:"), err)
 	}
