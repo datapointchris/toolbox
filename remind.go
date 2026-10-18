@@ -32,9 +32,9 @@ const atuinTimeout = 5 * time.Second
 // to save.
 const briefWidth = 72
 
-// remindBrief bounds the card to a few lines. Set by the shell-startup nudge
-// (`doit review`'s register runs `toolbox remind --brief`), where the full
-// detail view would bury the rest of the nudge.
+// remindBrief bounds the card to a few lines. Set by a shell-startup nudge that
+// runs `toolbox remind --brief`, where the full detail view would bury the rest
+// of the nudge.
 var remindBrief bool
 
 // remindPeek shows the card without recording that it was shown, so the rotation
@@ -256,8 +256,8 @@ func getRemindersPath(_ string) string {
 // atuin is preferred because it syncs: a tool reached for at the other desk has
 // been reached for, and resurfacing it here would be reminding you of something
 // you already use. The zsh file only ever describes this machine, so on the
-// fallback path a fleet-wide question quietly narrows to a local one — the same
-// answer toolbox gave before atuin existed, which is the right way to degrade.
+// fallback path a question about every machine narrows to this one. That is
+// the right way to degrade, because the answer is still true of this machine.
 func recentlyUsed(home string) map[string]bool {
 	if used, ok := atuinRecentlyUsed(); ok {
 		return used

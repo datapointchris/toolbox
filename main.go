@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 	Version: getVersion(),
 	Long: `Toolbox - Dotfiles Tool Discovery System
 
-Discover and learn about the 98 tools in your dotfiles.
+Discover and learn about the tools in your dotfiles.
 Search by name, category, or tags. Browse interactively with gum.`,
 	// A lone unrecognized argument is a search query, so `toolbox git` works.
 	// Cobra's default root validator rejects it as an unknown command, which is
