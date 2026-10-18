@@ -66,15 +66,6 @@ func rootArgs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// noArgs refuses a word on a command that takes none, the way the root refuses
-// a second one.
-func noArgs(cmd *cobra.Command, args []string) error {
-	if len(args) > 0 {
-		return goclikit.UnknownCommand(cmd, args[0])
-	}
-	return nil
-}
-
 func runRoot(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return cmd.Help()
@@ -91,7 +82,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Short:   "List all tools grouped by category",
-	Args:    noArgs,
+	Args:    cobra.NoArgs,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		DisplayListByCategory(registry)
@@ -136,7 +127,7 @@ var searchCmd = &cobra.Command{
 var categoriesCmd = &cobra.Command{
 	Use:     "categories",
 	Short:   "Browse tools by category (interactive)",
-	Args:    noArgs,
+	Args:    cobra.NoArgs,
 	PreRunE: requireRegistryPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if gum is installed

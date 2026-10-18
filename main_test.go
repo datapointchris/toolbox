@@ -17,11 +17,6 @@ func runLine(t *testing.T, args ...string) (int, string) {
 	t.Helper()
 	original := os.Args
 	os.Args = append([]string{"toolbox"}, args...)
-	// Execute resolves the command from the root's parsed words where it has
-	// any, and a line an earlier test ran on the root leaves its words there.
-	if err := rootCmd.Flags().Parse(nil); err != nil {
-		t.Fatal(err)
-	}
 	var output bytes.Buffer
 	rootCmd.SetOut(&output)
 	rootCmd.SetErr(&output)
@@ -77,7 +72,7 @@ func TestAWordOnACommandTakingNoneIsRefused(t *testing.T) {
 			if code != 2 {
 				t.Errorf("exit = %d, want 2", code)
 			}
-			if want := `unknown command "bogus" for "toolbox ` + command + `"`; !strings.Contains(stderr, want) {
+			if want := `toolbox ` + command + ` takes no arguments, and was given "bogus"`; !strings.Contains(stderr, want) {
 				t.Errorf("the word was not refused:\n%s", stderr)
 			}
 		})
