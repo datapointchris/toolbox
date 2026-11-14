@@ -11,6 +11,7 @@ import (
 
 	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
+	"github.com/datapointchris/gotermstyle/cobrahelp"
 	"github.com/spf13/cobra"
 )
 
@@ -244,6 +245,7 @@ func main() {
 
 // run is main without the exit, so a test can read the code and the error.
 func run(stderr io.Writer, autoConfig autoupdate.Config) int {
+	cobrahelp.Install(rootCmd)
 	err := goclikit.Execute(context.Background(), rootCmd, autoConfig)
 	if err == nil {
 		return 0

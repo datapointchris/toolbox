@@ -1,12 +1,13 @@
 module github.com/datapointchris/toolbox
 
-go 1.26.5
+go 1.26.8
 
 toolchain go1.26.9
 
 require (
 	github.com/datapointchris/goclikit v0.4.3
 	github.com/datapointchris/goselfupdate v0.11.0
+	github.com/datapointchris/gotermstyle v0.6.0
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
