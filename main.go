@@ -138,7 +138,7 @@ var categoriesCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := InteractiveCategoryBrowse(registry); err != nil {
+		if err := InteractiveCategoryBrowse(cmd.Context(), registry); err != nil {
 			fmt.Printf("%s %v\n", colorRed("Error:"), err)
 			os.Exit(1)
 		}

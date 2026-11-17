@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,7 +13,7 @@ import (
 
 // SelectCategory shows an interactive category picker using gum
 // Returns selected category name or empty string if canceled
-func SelectCategory(registry *Registry) (string, error) {
+func SelectCategory(ctx context.Context, registry *Registry) (string, error) {
 	categories := GetCategoriesSorted(registry)
 	categoryMap := registry.ByCategory()
 
@@ -27,7 +28,7 @@ func SelectCategory(registry *Registry) (string, error) {
 	}
 
 	// Run gum choose
-	cmd := exec.Command("gum", args...)
+	cmd := exec.CommandContext(ctx, "gum", args...)
 	cmd.Stderr = os.Stderr // Show gum errors
 
 	// Run and capture output
@@ -49,7 +50,7 @@ func SelectCategory(registry *Registry) (string, error) {
 
 // SelectToolInCategory shows an interactive tool picker for a category
 // Uses gum with preview showing tool details
-func SelectToolInCategory(registry *Registry, category string) (string, error) {
+func SelectToolInCategory(ctx context.Context, registry *Registry, category string) (string, error) {
 	tools := GetToolsByCategory(registry, category)
 
 	if len(tools) == 0 {
@@ -72,7 +73,7 @@ func SelectToolInCategory(registry *Registry, category string) (string, error) {
 	}
 	args = append(args, toolNames...)
 
-	cmd := exec.Command("gum", args...)
+	cmd := exec.CommandContext(ctx, "gum", args...)
 	cmd.Stderr = os.Stderr
 
 	output, err := cmd.Output()
@@ -85,9 +86,9 @@ func SelectToolInCategory(registry *Registry, category string) (string, error) {
 
 // InteractiveCategoryBrowse provides a two-level menu: category -> tool -> details
 // This is the main interactive flow for browsing tools
-func InteractiveCategoryBrowse(registry *Registry) error {
+func InteractiveCategoryBrowse(ctx context.Context, registry *Registry) error {
 	// Step 1: Select category
-	category, err := SelectCategory(registry)
+	category, err := SelectCategory(ctx, registry)
 	if err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func InteractiveCategoryBrowse(registry *Registry) error {
 	}
 
 	// Step 2: Select tool in category
-	toolName, err := SelectToolInCategory(registry, category)
+	toolName, err := SelectToolInCategory(ctx, registry, category)
 	if err != nil {
 		return err
 	}

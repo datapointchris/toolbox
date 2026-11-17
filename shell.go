@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -270,8 +271,8 @@ func LoadShellAliases() ([]ShellAlias, error) {
 // LoadGitAliases returns git aliases from `git config --get-regexp ^alias\.`.
 // Git resolves every config file, so this is source-agnostic. A missing git or
 // an absence of aliases is non-fatal — the caller just gets an empty slice.
-func LoadGitAliases() ([]ShellAlias, error) {
-	out, err := exec.Command("git", "config", "--get-regexp", `^alias\.`).Output()
+func LoadGitAliases(ctx context.Context) ([]ShellAlias, error) {
+	out, err := exec.CommandContext(ctx, "git", "config", "--get-regexp", `^alias\.`).Output()
 	if err != nil {
 		return nil, err
 	}

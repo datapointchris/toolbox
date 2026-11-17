@@ -76,7 +76,7 @@ still only moves when you reach for the tool yourself.`,
 		used := recentlyUsed(home)
 		reminders := loadReminders(remindersPath)
 
-		candidates := buildRemindCandidates(registry)
+		candidates := buildRemindCandidates(cmd.Context(), registry)
 		target, ok := pickRemindTarget(candidates, used, reminders)
 		if !ok {
 			return
@@ -130,7 +130,7 @@ type remindTarget struct {
 // buildRemindCandidates pools the registry tools with the annotated shell
 // functions and aliases. Shell parsing failures are non-fatal — a missing
 // functions.sh just means fewer candidates, not a broken reminder.
-func buildRemindCandidates(reg *Registry) []remindTarget {
+func buildRemindCandidates(ctx context.Context, reg *Registry) []remindTarget {
 	var cands []remindTarget
 	for name, tool := range reg.Tools {
 		cands = append(cands, remindTarget{name: name, kind: "tool", tool: tool})
@@ -145,7 +145,7 @@ func buildRemindCandidates(reg *Registry) []remindTarget {
 			cands = append(cands, remindTarget{name: alias.Name, kind: "alias", al: alias})
 		}
 	}
-	if gits, err := LoadGitAliases(); err == nil {
+	if gits, err := LoadGitAliases(ctx); err == nil {
 		for _, g := range gits {
 			cands = append(cands, remindTarget{name: g.Name, kind: "gitalias", al: g})
 		}
